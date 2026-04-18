@@ -13,6 +13,20 @@ app = Flask(__name__)
 data_manager = GymDataManager()
 
 
+def get_template_data(df, category_map, category_order, stats):
+    """
+    Helper to prepare common template data.
+    """
+    categories = []
+    stats_by_category = {cat: [] for cat in category_order}
+    for cat in category_order:
+        names = [s['name'] for s in stats if s.get('category') == cat]
+        categories.append({'name': cat, 'exercises': names})
+        stats_by_category[cat] = [s for s in stats if s.get('category') == cat]
+    
+    return categories, stats_by_category
+
+
 @app.route('/')
 def index():
     """
@@ -24,40 +38,27 @@ def index():
         return render_template('index.html', stats_by_category={}, category_order=[], latest_date='N/A')
 
     stats = data_manager.get_all_stats(df, category_map)
+    categories, stats_by_category = get_template_data(df, category_map, category_order, stats)
 
     # Find the exercise that was most recently increased
-    last_increased_exercise = None
-    latest_increase_time = None
-    for stat in stats:
-        if stat['last_increase_date']:
-            if latest_increase_time is None or stat['last_increase_date'] > latest_increase_time:
-                latest_increase_time = stat['last_increase_date']
-                last_increased_exercise = stat
+    last_increased = max([s for s in stats if s['last_increase_date']], 
+                        key=lambda x: x['last_increase_date'], default=None)
 
     # Find stagnating exercises (longest time without improvement)
-    stagnating = [s for s in stats if s['last_increase_date'] is not None]
-    stagnating.sort(key=lambda x: x['last_increase_date'])
-    top_stagnating = stagnating[:3]
+    stagnating = sorted([s for s in stats if s['last_increase_date'] is not None],
+                       key=lambda x: x['last_increase_date'])[:3]
 
     # Global last measurement date for the badge
     latest_dt = pd.to_datetime(df['Datum']).dropna().max() if 'Datum' in df.columns else None
     latest_date = latest_dt.strftime('%d.%m.%Y') if pd.notna(latest_dt) else 'N/A'
-
-    # Group statistics by category for the UI
-    categories = []
-    stats_by_category = {cat: [] for cat in category_order}
-    for cat in category_order:
-        names = [s['name'] for s in stats if s.get('category') == cat]
-        categories.append({'name': cat, 'exercises': names})
-        stats_by_category[cat] = [s for s in stats if s.get('category') == cat]
 
     return render_template(
         'index.html',
         categories=categories,
         stats_by_category=stats_by_category,
         category_order=category_order,
-        last_increased=last_increased_exercise,
-        stagnating=top_stagnating,
+        last_increased=last_increased,
+        stagnating=stagnating,
         latest_date=latest_date
     )
 
@@ -80,16 +81,13 @@ def details(name):
     # Round values for better display in the plot
     series[name] = series[name].round(1)
 
-    # Calculate statistics for this exercise using data_manager
+    # Sidebar and general stats
     stats = data_manager.get_all_stats(df, category_map)
-    ex_stat = next((s for s in stats if s['name'] == name), {})
+    categories, _ = get_template_data(df, category_map, category_order, stats)
     
-    latest_val = ex_stat.get('current_max', 0.0)
-    latest_date_str = ex_stat.get('last_date', 'N/A')
-    days_since_last = ex_stat.get('days_since_last', 0)
-    diff = ex_stat.get('diff', 0.0)
-    total_increase_pct = ex_stat.get('total_increase_pct', 0.0)
-    quarter_increase_pct = ex_stat.get('quarter_increase_pct', 0.0)
+    ex_stat = next((s for s in stats if s['name'] == name), {})
+    if not ex_stat:
+        abort(404)
 
     # Trendline calculation and prediction
     prediction_info = None
@@ -109,28 +107,30 @@ def details(name):
         weights = np.linspace(1.0, 2.5, len(y_recent))
         m, c = np.polyfit(x_recent, y_recent, 1, w=weights)
         
-        # Prediction for next target (next 5kg increment)
-        target_weight = ((latest_val // 5) + 1) * 5
+    # Prediction for next target (next 5kg increment)
+    latest_val = ex_stat.get('current_max', 0.0)
+    target_weight = ((latest_val // 5) + 1) * 5
+    
+    # Only predict if trend is positive and not stagnant
+    if len(series) >= 3 and m > 0.05:  # at least 50g per day increase (~1.5kg per month)
+        # Use the trend to find when target_weight is reached
+        # target = m * x_target + c  => x_target = (target - c) / m
+        days_to_target = (target_weight - c) / m
+        target_date = first_recent_date + pd.Timedelta(days=int(days_to_target))
         
-        # Only predict if trend is positive and not stagnant
-        if m > 0.05:  # at least 50g per day increase (~1.5kg per month)
-            # Use the trend to find when target_weight is reached
-            # target = m * x_target + c  => x_target = (target - c) / m
-            days_to_target = (target_weight - c) / m
-            target_date = first_recent_date + pd.Timedelta(days=int(days_to_target))
-            
-            # If predicted date is in the past (due to regression noise), 
-            # adjust it to be at least today + some realistic buffer
-            if target_date < datetime.now():
-                # If we are already near target, maybe it's just 1-2 days away
-                target_date = datetime.now() + pd.Timedelta(days=max(1, int(5/m) if m > 0 else 7))
+        # If predicted date is in the past (due to regression noise), 
+        # adjust it to be at least today + some realistic buffer
+        if target_date < datetime.now():
+            # If we are already near target, maybe it's just 1-2 days away
+            target_date = datetime.now() + pd.Timedelta(days=max(1, int(5/m) if m > 0 else 7))
 
-            prediction_info = {
-                'target_weight': int(target_weight),
-                'target_date': target_date.strftime('%d.%m.%Y'),
-                'days_remaining': (target_date - datetime.now()).days
-            }
-        
+        prediction_info = {
+            'target_weight': int(target_weight),
+            'target_date': target_date.strftime('%d.%m.%Y'),
+            'days_remaining': (target_date - datetime.now()).days
+        }
+    
+    if len(series) >= 3:
         # Generate points for trendline visualization (from first recent point to 30 days future)
         extrapolate_to = datetime.now() + pd.Timedelta(days=30)
         future_days_max = (extrapolate_to - first_recent_date).days
@@ -215,32 +215,23 @@ def details(name):
     )
     graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-    # Sidebar: grouped by categories, only exercises with data
-    categories = []
-    for cat in category_order:
-        names = [ex for ex, ex_cat in category_map.items() 
-                 if ex_cat == cat and ex in df.columns and not df[ex].dropna().empty]
-        categories.append({'name': cat, 'exercises': names})
-
     # History for the table (newest first)
     history = series.sort_values('Datum', ascending=False).to_dict('records')
     for h in history:
         h['Datum_str'] = h['Datum'].strftime('%d.%m.%Y')
-
-    current_category = category_map.get(name)
 
     return render_template(
         'details.html',
         name=name,
         graph_json=graph_json,
         categories=categories,
-        current_category=current_category,
-        latest_val=latest_val,
-        latest_date=latest_date_str,
-        days_since_last=days_since_last,
-        diff=diff,
-        total_increase_pct=total_increase_pct,
-        quarter_increase_pct=quarter_increase_pct,
+        current_category=category_map.get(name),
+        latest_val=ex_stat.get('current_max', 0.0),
+        latest_date=ex_stat.get('last_date', 'N/A'),
+        days_since_last=ex_stat.get('days_since_last', 0),
+        diff=ex_stat.get('diff', 0.0),
+        total_increase_pct=ex_stat.get('total_increase_pct', 0.0),
+        quarter_increase_pct=ex_stat.get('quarter_increase_pct', 0.0),
         prediction=prediction_info,
         history=history
     )

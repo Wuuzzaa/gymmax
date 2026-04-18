@@ -104,81 +104,80 @@ class GymDataManager:
         """
         stats = []
         exercises = [col for col in df.columns if col != 'Datum']
-        today = datetime.now()
 
         for exercise in exercises:
-            # Extract series without NaNs
-            series = df[['Datum', exercise]].dropna()
-            
-            if not series.empty:
-                series = series.sort_values('Datum')
-                
-                latest_dt = series['Datum'].iloc[-1]
-                latest_val = round(float(series[exercise].iloc[-1]), 1)
-                latest_date_str = latest_dt.strftime('%d.%m.%Y')
-                days_since_last = (today - latest_dt).days
-                
-                diff = 0.0
-                total_increase_pct = 0.0
-                last_increase_date = None
-                days_since_increase = None
-                
-                first_val = float(series[exercise].iloc[0])
-                if first_val > 0:
-                    total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1)
-
-                # Last quarter increase (last 90 days)
-                quarter_increase_pct = 0.0
-                quarter_ago = latest_dt - timedelta(days=90)
-                old_series = series[series['Datum'] <= quarter_ago]
-                
-                if not old_series.empty:
-                    quarter_val = float(old_series[exercise].iloc[-1])
-                else:
-                    quarter_val = first_val
-                
-                if quarter_val > 0:
-                    quarter_increase_pct = round(((latest_val - quarter_val) / quarter_val) * 100, 1)
-
-                if len(series) > 1:
-                    prev_val = float(series[exercise].iloc[-2])
-                    diff = round(latest_val - prev_val, 1)
-                    
-                    # Find last increase date by traversing backwards
-                    for i in range(len(series) - 1, 0, -1):
-                        if float(series[exercise].iloc[i]) > float(series[exercise].iloc[i-1]):
-                            last_increase_date = series['Datum'].iloc[i]
-                            days_since_increase = (today - last_increase_date).days
-                            break
-                
-                # Icon mapping based on exercise name
-                icon = self._get_exercise_icon(exercise)
-                    
-                stats.append({
-                    'name': exercise,
-                    'current_max': latest_val,
-                    'first_max': round(first_val, 1),
-                    'total_increase_pct': total_increase_pct,
-                    'quarter_increase_pct': quarter_increase_pct,
-                    'diff': diff,
-                    'last_date': latest_date_str,
-                    'days_since_last': days_since_last,
-                    'last_increase_date': last_increase_date,
-                    'days_since_increase': days_since_increase,
-                    'icon': icon,
-                    'category': category_map.get(exercise) if category_map else None
-                })
+            exercise_stats = self.get_exercise_stats(df, exercise, category_map)
+            if exercise_stats:
+                stats.append(exercise_stats)
                 
         return stats
+
+    def get_exercise_stats(self, df: pd.DataFrame, exercise: str, category_map: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
+        """
+        Calculates statistics for a single exercise.
+        """
+        series = df[['Datum', exercise]].dropna()
+        if series.empty:
+            return None
+
+        series = series.sort_values('Datum')
+        today = datetime.now()
+        
+        latest_dt = series['Datum'].iloc[-1]
+        latest_val = round(float(series[exercise].iloc[-1]), 1)
+        first_val = float(series[exercise].iloc[0])
+        
+        # Increases
+        total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1) if first_val > 0 else 0.0
+        
+        # Quarter increase (last 90 days)
+        quarter_ago = latest_dt - timedelta(days=90)
+        old_series = series[series['Datum'] <= quarter_ago]
+        quarter_val = float(old_series[exercise].iloc[-1]) if not old_series.empty else first_val
+        quarter_increase_pct = round(((latest_val - quarter_val) / quarter_val) * 100, 1) if quarter_val > 0 else 0.0
+
+        diff = 0.0
+        last_increase_date = None
+        days_since_increase = None
+
+        if len(series) > 1:
+            prev_val = float(series[exercise].iloc[-2])
+            diff = round(latest_val - prev_val, 1)
+            
+            # Find last increase date by traversing backwards
+            for i in range(len(series) - 1, 0, -1):
+                if float(series[exercise].iloc[i]) > float(series[exercise].iloc[i-1]):
+                    last_increase_date = series['Datum'].iloc[i]
+                    days_since_increase = (today - last_increase_date).days
+                    break
+
+        return {
+            'name': exercise,
+            'current_max': latest_val,
+            'first_max': round(first_val, 1),
+            'total_increase_pct': total_increase_pct,
+            'quarter_increase_pct': quarter_increase_pct,
+            'diff': diff,
+            'last_date': latest_dt.strftime('%d.%m.%Y'),
+            'days_since_last': (today - latest_dt).days,
+            'last_increase_date': last_increase_date,
+            'days_since_increase': days_since_increase,
+            'icon': self._get_exercise_icon(exercise),
+            'category': category_map.get(exercise) if category_map else None
+        }
 
     @staticmethod
     def _get_exercise_icon(exercise_name: str) -> str:
         """
         Returns a FontAwesome icon class based on the exercise name.
         """
+        icon_mapping = {
+            "fa-legs-dot": ["bein", "adduktor", "abduktor", "glutaeus"],
+            "fa-child": ["bauch", "rückenstrec", "rumpf"]
+        }
+        
         lower_name = exercise_name.lower()
-        if any(keyword in lower_name for keyword in ["bein", "adduktor", "abduktor", "glutaeus"]):
-            return "fa-legs-dot"
-        elif any(keyword in lower_name for keyword in ["bauch", "rückenstrec", "rumpf"]):
-            return "fa-child"
+        for icon, keywords in icon_mapping.items():
+            if any(k in lower_name for k in keywords):
+                return icon
         return "fa-dumbbell"
