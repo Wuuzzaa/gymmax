@@ -94,6 +94,9 @@
                             {% if stat.diff > 0 %}+{% endif %}{{ stat.diff }} kg
                         </span>
                         <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
+                            Quartal: {% if stat.quarter_increase_pct > 0 %}+{% endif %}{{ stat.quarter_increase_pct }}%
+                        </span>
+                        <span class="badge bg-light text-dark rounded-pill" style="font-size: 0.7rem;">
                             Gesamt: {% if stat.total_increase_pct > 0 %}+{% endif %}{{ stat.total_increase_pct }}%
                         </span>
                     </div>

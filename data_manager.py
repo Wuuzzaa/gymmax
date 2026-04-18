@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional, Any
 
 
@@ -127,6 +127,19 @@ class GymDataManager:
                 if first_val > 0:
                     total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1)
 
+                # Last quarter increase (last 90 days)
+                quarter_increase_pct = 0.0
+                quarter_ago = latest_dt - timedelta(days=90)
+                old_series = series[series['Datum'] <= quarter_ago]
+                
+                if not old_series.empty:
+                    quarter_val = float(old_series[exercise].iloc[-1])
+                else:
+                    quarter_val = first_val
+                
+                if quarter_val > 0:
+                    quarter_increase_pct = round(((latest_val - quarter_val) / quarter_val) * 100, 1)
+
                 if len(series) > 1:
                     prev_val = float(series[exercise].iloc[-2])
                     diff = round(latest_val - prev_val, 1)
@@ -146,6 +159,7 @@ class GymDataManager:
                     'current_max': latest_val,
                     'first_max': round(first_val, 1),
                     'total_increase_pct': total_increase_pct,
+                    'quarter_increase_pct': quarter_increase_pct,
                     'diff': diff,
                     'last_date': latest_date_str,
                     'days_since_last': days_since_last,

@@ -80,21 +80,16 @@ def details(name):
     # Round values for better display in the plot
     series[name] = series[name].round(1)
 
-    # Calculate statistics for this exercise
-    latest_dt = series['Datum'].iloc[-1]
-    latest_val = round(float(series[name].iloc[-1]), 1)
-    latest_date_str = latest_dt.strftime('%d.%m.%Y')
-    days_since_last = (datetime.now() - latest_dt).days
-
-    diff = 0.0
-    total_increase_pct = 0.0
-    if len(series) > 1:
-        prev_val = float(series[name].iloc[-2])
-        diff = round(latest_val - prev_val, 1)
-        
-        first_val = float(series[name].iloc[0])
-        if first_val > 0:
-            total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1)
+    # Calculate statistics for this exercise using data_manager
+    stats = data_manager.get_all_stats(df, category_map)
+    ex_stat = next((s for s in stats if s['name'] == name), {})
+    
+    latest_val = ex_stat.get('current_max', 0.0)
+    latest_date_str = ex_stat.get('last_date', 'N/A')
+    days_since_last = ex_stat.get('days_since_last', 0)
+    diff = ex_stat.get('diff', 0.0)
+    total_increase_pct = ex_stat.get('total_increase_pct', 0.0)
+    quarter_increase_pct = ex_stat.get('quarter_increase_pct', 0.0)
 
     # Trendline calculation and prediction
     prediction_info = None
@@ -245,6 +240,7 @@ def details(name):
         days_since_last=days_since_last,
         diff=diff,
         total_increase_pct=total_increase_pct,
+        quarter_increase_pct=quarter_increase_pct,
         prediction=prediction_info,
         history=history
     )

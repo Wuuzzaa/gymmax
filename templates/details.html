@@ -35,6 +35,9 @@
                     {% if diff > 0 %}+{% endif %}{{ diff }} kg (letzte Messung)
                 </span>
                 <span class="badge bg-info text-dark rounded-pill">
+                    Quartal: {% if quarter_increase_pct > 0 %}+{% endif %}{{ quarter_increase_pct }}%
+                </span>
+                <span class="badge bg-light text-dark rounded-pill">
                     Gesamt: {% if total_increase_pct > 0 %}+{% endif %}{{ total_increase_pct }}%
                 </span>
             </div>

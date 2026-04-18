@@ -32,6 +32,8 @@ class TestApp(unittest.TestCase):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Beinpresse', response.data)
+        self.assertIn(b'Quartal:', response.data)
+        self.assertIn(b'Gesamt:', response.data)
 
     @patch('data_manager.GymDataManager.load_data_with_categories')
     def test_details_route_with_trend(self, mock_load):
