@@ -47,9 +47,9 @@ class TestApp(unittest.TestCase):
         response = self.client.get('/exercise/Beinpresse')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Beinpresse', response.data)
-        # Check if trend is mentioned in the response (e.g., in the graph JSON or prediction)
-        self.assertIn(b'Trend (Logarithmisch)', response.data)
+        # Check if trend and data are mentioned in the response
         self.assertIn(b'Trend-Prognose', response.data)
+        self.assertIn(b'Kraftmessung', response.data)
 
     @patch('data_manager.GymDataManager.load_data_with_categories')
     def test_details_route_not_found(self, mock_load):

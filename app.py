@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from flask import Flask, render_template, abort
 import plotly.express as px
+import plotly.graph_objects as go
 import plotly.utils
 import pandas as pd
 import numpy as np
@@ -98,86 +99,124 @@ def details(name):
     # Trendline calculation and prediction
     prediction_info = None
     trend_data = pd.DataFrame()
-    if len(series) > 2:  # Need at least 3 points for a more stable trend
-        # Convert dates to numbers (days since first measurement)
-        first_date = series['Datum'].min()
-        days_since_start = (series['Datum'] - first_date).dt.days
-        x = days_since_start.values
-        y = series[name].values
+    if len(series) >= 3:  # Need at least 3 points for a trend
+        # Use last 8 points for trend to be more responsive to recent progress
+        recent_points = series.tail(8).copy()
         
-        # Logarithmic model (y = a * ln(x + 1) + b) to account for diminishing returns
-        # x+1 to avoid log(0)
-        x_log = np.log(x + 1)
-        params = np.polyfit(x_log, y, 1)  # [a, b]
-        a, b = params
+        # Convert dates to numbers (days since first of these points)
+        first_recent_date = recent_points['Datum'].min()
+        x_recent = (recent_points['Datum'] - first_recent_date).dt.days.values
+        y_recent = recent_points[name].values
         
-        # Calculate trendline for existing points
-        series['Trendline'] = a * np.log(x + 1) + b
+        # Weighted linear regression: y = m*x + c
+        # We assign more weight to newer data points (recent progress)
+        # Weights increase from 1.0 to 2.5 for the most recent point
+        weights = np.linspace(1.0, 2.5, len(y_recent))
+        m, c = np.polyfit(x_recent, y_recent, 1, w=weights)
         
-        # Extrapolate to end of current quarter
-        today = datetime.now()
-        current_quarter = (today.month - 1) // 3 + 1
-        last_month_of_quarter = current_quarter * 3
-        
-        import calendar
-        _, last_day = calendar.monthrange(today.year, last_month_of_quarter)
-        quarter_end = datetime(today.year, last_month_of_quarter, last_day)
-        
-        # If quarter end is already passed or very close, go to next quarter end
-        if (quarter_end - today).days < 14:
-            next_q = (current_quarter % 4) + 1
-            next_y = today.year + (1 if current_quarter == 4 else 0)
-            _, last_day = calendar.monthrange(next_y, next_q * 3)
-            quarter_end = datetime(next_y, next_q * 3, last_day)
-
-        # Generate points for extrapolation (from last measurement to quarter end)
-        # Limit extrapolation to a reasonable timeframe (max 30 days from today)
-        extrapolate_to = min(quarter_end, today + pd.Timedelta(days=30))
-        future_days = (extrapolate_to - first_date).days
-        x_future = np.linspace(x[-1], future_days, 20)
-        y_future = a * np.log(x_future + 1) + b
-        dates_future = [first_date + pd.Timedelta(days=int(d)) for d in x_future]
-        
-        trend_data = pd.DataFrame({
-            'Datum': dates_future,
-            'Trendline': y_future
-        })
-        
-        # Prediction for next target (next 5kg or 10kg increment)
+        # Prediction for next target (next 5kg increment)
         target_weight = ((latest_val // 5) + 1) * 5
-        # If trend is positive (a > 0)
-        if a > 0.01:
-            # target = a * ln(x_target + 1) + b => (target - b) / a = ln(x_target + 1)
-            # => x_target = exp((target - b) / a) - 1
-            days_to_target = np.exp((target_weight - b) / a) - 1
-            target_date = first_date + pd.Timedelta(days=int(days_to_target))
+        
+        # Only predict if trend is positive and not stagnant
+        if m > 0.05:  # at least 50g per day increase (~1.5kg per month)
+            # Use the trend to find when target_weight is reached
+            # target = m * x_target + c  => x_target = (target - c) / m
+            days_to_target = (target_weight - c) / m
+            target_date = first_recent_date + pd.Timedelta(days=int(days_to_target))
+            
+            # If predicted date is in the past (due to regression noise), 
+            # adjust it to be at least today + some realistic buffer
+            if target_date < datetime.now():
+                # If we are already near target, maybe it's just 1-2 days away
+                target_date = datetime.now() + pd.Timedelta(days=max(1, int(5/m) if m > 0 else 7))
+
             prediction_info = {
                 'target_weight': int(target_weight),
                 'target_date': target_date.strftime('%d.%m.%Y'),
                 'days_remaining': (target_date - datetime.now()).days
             }
-
-    # Create Plotly figure
-    fig = px.line(series, x='Datum', y=name, title=f'Fortschritt: {name}',
-                  markers=True, text=name, template='plotly_dark')
-    
-    # Add trendline if available
-    if not trend_data.empty:
-        # Full trendline: existing part + future part
-        # Combine existing trend and future trend for a continuous line
-        full_trend_x = pd.concat([series['Datum'], trend_data['Datum']])
-        full_trend_y = pd.concat([series['Trendline'], trend_data['Trendline']])
         
-        fig.add_scatter(x=full_trend_x, y=full_trend_y, mode='lines', 
-                        name='Trend (Logarithmisch)', line=dict(dash='dash', color='rgba(0, 255, 100, 0.6)'))
+        # Generate points for trendline visualization (from first recent point to 30 days future)
+        extrapolate_to = datetime.now() + pd.Timedelta(days=30)
+        future_days_max = (extrapolate_to - first_recent_date).days
+        
+        x_trend = np.array([0, future_days_max])
+        y_trend = m * x_trend + c
+        dates_trend = [first_recent_date + pd.Timedelta(days=int(d)) for d in x_trend]
+        
+        trend_data = pd.DataFrame({
+            'Datum': dates_trend,
+            'Trendline': y_trend
+        })
+
+    # Create Plotly figure with a modern, clean look
+    fig = go.Figure()
+
+    # Convert numpy arrays to lists for JSON serialization to avoid binary encoding in Plotly
+    series_x = series['Datum'].tolist()
+    series_y = series[name].tolist()
     
-    fig.update_traces(cliponaxis=False, textposition="top center", selector=dict(type='scatter', mode='lines+markers+text'))
+    # Add the main progress line (measurements)
+    fig.add_trace(go.Scatter(
+        x=series_x,
+        y=series_y,
+        mode='lines+markers+text',
+        name='Kraftmessung',
+        text=[f"{val:g}" for val in series_y],
+        textposition='top center',
+        line=dict(color='#3b82f6', width=4),
+        marker=dict(size=10, symbol='circle', line=dict(width=2, color='#ffffff')),
+        hovertemplate='<b>Datum</b>: %{x}<br><b>Gewicht</b>: %{y} kg<extra></extra>'
+    ))
+
+    # Add the trendline if available
+    if not trend_data.empty:
+        trend_x = trend_data['Datum'].tolist()
+        trend_y = trend_data['Trendline'].tolist()
+        fig.add_trace(go.Scatter(
+            x=trend_x,
+            y=trend_y,
+            mode='lines',
+            name='Trend-Prognose',
+            line=dict(color='#10b981', width=2, dash='dash'),
+            hovertemplate='<b>Prognose</b><br>Datum: %{x}<br>Gewicht: %{y:.1f} kg<extra></extra>'
+        ))
+    
+    # Elegant dark theme layout
     fig.update_layout(
-        xaxis_title='Datum',
-        yaxis_title='Gewicht (kg)',
+        template='plotly_dark',
+        title=dict(
+            text=f'Entwicklung: {name}',
+            font=dict(size=22, color='#ffffff'),
+            x=0.05,
+            y=0.95
+        ),
+        xaxis=dict(
+            title='Datum',
+            gridcolor='rgba(255,255,255,0.05)',
+            showgrid=True,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title='Gewicht (kg)',
+            gridcolor='rgba(255,255,255,0.05)',
+            showgrid=True,
+            zeroline=False,
+            # Start y-axis slightly below the minimum value for better focus on progress
+            range=[float(series[name].min()) * 0.85, float(max(series[name].max(), trend_data['Trendline'].max() if not trend_data.empty else 0)) * 1.1]
+        ),
         hovermode='x unified',
-        yaxis=dict(rangemode='tozero', zeroline=True, gridcolor='rgba(255,255,255,0.1)'),
-        xaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+        margin=dict(l=40, r=40, t=80, b=40),
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1,
+            bgcolor='rgba(0,0,0,0)'
+        ),
+        plot_bgcolor='rgba(15,23,42,1)',  # Deep slate background
+        paper_bgcolor='rgba(15,23,42,1)',
     )
     graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
