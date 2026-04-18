@@ -15,10 +15,10 @@ GymMax is a monolithic web application based on the Flask framework. It serves a
 2.  **Data Management (`data_manager.py`)**:
     - `GymDataManager`: Encapsulates all data access and processing logic.
     - `load_data_with_categories()`: Reads the Excel file with `pandas`, handles multi-level headers for categories, and cleans the data.
-    - `get_all_stats(df)`: Calculates the current maximum weight, difference from the previous measurement, and the date of the last increase for each exercise.
+    - `get_all_stats(df)`: Calculates current max weight, relative increase (total %), and difference from the previous measurement.
 3.  **Routing (`app.py`)**:
     - `/`: Displays the dashboard with aggregated statistics and overview.
-    - `/exercise/<name>`: Displays the detailed page for a specific exercise.
+    - `/exercise/<name>`: Displays the detailed page with progress chart, logarithmic regression trendline (accounting for diminishing returns), extrapolation to the end of the quarter, and milestone prediction.
 4.  **Visualization**:
     - `plotly.express`: Generates interactive line charts from the pandas DataFrames.
     - `Flask Templates`: Render HTML (Jinja2) using Bootstrap for styling.

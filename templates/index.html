@@ -89,9 +89,14 @@
                     <div class="icon-box p-3 bg-primary bg-opacity-10 rounded">
                         <i class="fas {{ stat.icon }} text-primary fa-lg"></i>
                     </div>
-                    <span class="badge {% if stat.diff > 0 %}bg-success{% elif stat.diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
-                        {% if stat.diff > 0 %}+{% endif %}{{ stat.diff }} kg
-                    </span>
+                    <div class="text-end">
+                        <span class="badge {% if stat.diff > 0 %}bg-success{% elif stat.diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill mb-1 d-block">
+                            {% if stat.diff > 0 %}+{% endif %}{{ stat.diff }} kg
+                        </span>
+                        <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
+                            Gesamt: {% if stat.total_increase_pct > 0 %}+{% endif %}{{ stat.total_increase_pct }}%
+                        </span>
+                    </div>
                 </div>
                 <h5 class="card-title">{{ stat.name }}</h5>
                 <div class="mt-3">

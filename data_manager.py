@@ -119,9 +119,14 @@ class GymDataManager:
                 days_since_last = (today - latest_dt).days
                 
                 diff = 0.0
+                total_increase_pct = 0.0
                 last_increase_date = None
                 days_since_increase = None
                 
+                first_val = float(series[exercise].iloc[0])
+                if first_val > 0:
+                    total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1)
+
                 if len(series) > 1:
                     prev_val = float(series[exercise].iloc[-2])
                     diff = round(latest_val - prev_val, 1)
@@ -139,6 +144,8 @@ class GymDataManager:
                 stats.append({
                     'name': exercise,
                     'current_max': latest_val,
+                    'first_max': round(first_val, 1),
+                    'total_increase_pct': total_increase_pct,
                     'diff': diff,
                     'last_date': latest_date_str,
                     'days_since_last': days_since_last,

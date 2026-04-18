@@ -30,9 +30,12 @@
         <div class="card shadow-sm h-100 p-3">
             <div class="text-muted small">Aktuelles Gewicht</div>
             <div class="h2 mb-0 text-primary">{{ latest_val }} <span class="h6 text-muted">kg</span></div>
-            <div class="mt-2">
+            <div class="mt-2 d-flex flex-wrap gap-2">
                 <span class="badge {% if diff > 0 %}bg-success{% elif diff < 0 %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
-                    {% if diff > 0 %}+{% endif %}{{ diff }} kg zum Vorletzten
+                    {% if diff > 0 %}+{% endif %}{{ diff }} kg (letzte Messung)
+                </span>
+                <span class="badge bg-info text-dark rounded-pill">
+                    Gesamt: {% if total_increase_pct > 0 %}+{% endif %}{{ total_increase_pct }}%
                 </span>
             </div>
             <div class="mt-3 text-muted small">
@@ -40,6 +43,26 @@
             </div>
         </div>
     </div>
+    
+    {% if prediction %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 p-3 border-start border-4 border-info">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Trend-Prognose</div>
+            <div class="h5 mb-1">Ziel: <span class="text-info">{{ prediction.target_weight }} kg</span></div>
+            <div class="text-muted small">
+                Voraussichtlich am: <strong>{{ prediction.target_date }}</strong>
+                <br>
+                <span class="badge bg-light text-dark mt-1">
+                    {% if prediction.days_remaining > 0 %}
+                    in ca. {{ prediction.days_remaining }} Tagen
+                    {% else %}
+                    Ziel bereits erreicht/überfällig
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <div class="row">

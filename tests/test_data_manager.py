@@ -37,6 +37,7 @@ class TestGymDataManager(unittest.TestCase):
         ex1_stat = next(s for s in stats if s['name'] == 'Exercise1')
         self.assertEqual(ex1_stat['current_max'], 55.0)
         self.assertEqual(ex1_stat['diff'], 5.0)
+        self.assertEqual(ex1_stat['total_increase_pct'], 10.0)  # (55-50)/50 * 100
         self.assertEqual(ex1_stat['category'], 'Upper Body')
         self.assertIsNotNone(ex1_stat['last_increase_date'])
         
@@ -44,6 +45,7 @@ class TestGymDataManager(unittest.TestCase):
         ex2_stat = next(s for s in stats if s['name'] == 'Exercise2')
         self.assertEqual(ex2_stat['current_max'], 20.0)
         self.assertEqual(ex2_stat['diff'], 0.0)
+        self.assertEqual(ex2_stat['total_increase_pct'], 0.0)
         self.assertIsNone(ex2_stat['last_increase_date'])
 
 if __name__ == '__main__':

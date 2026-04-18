@@ -34,6 +34,24 @@ class TestApp(unittest.TestCase):
         self.assertIn(b'Beinpresse', response.data)
 
     @patch('data_manager.GymDataManager.load_data_with_categories')
+    def test_details_route_with_trend(self, mock_load):
+        # Mock data with at least 3 points for trend
+        df = pd.DataFrame({
+            'Datum': [datetime(2023, 1, 1), datetime(2023, 1, 10), datetime(2023, 1, 20)],
+            'Beinpresse': [100.0, 105.0, 110.0]
+        })
+        category_map = {'Beinpresse': 'Legs'}
+        category_order = ['Legs']
+        mock_load.return_value = (df, category_map, category_order)
+        
+        response = self.client.get('/exercise/Beinpresse')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Beinpresse', response.data)
+        # Check if trend is mentioned in the response (e.g., in the graph JSON or prediction)
+        self.assertIn(b'Trend (Logarithmisch)', response.data)
+        self.assertIn(b'Trend-Prognose', response.data)
+
+    @patch('data_manager.GymDataManager.load_data_with_categories')
     def test_details_route_not_found(self, mock_load):
         # Mock data
         df = pd.DataFrame({'Datum': [datetime(2023, 1, 1)]})
