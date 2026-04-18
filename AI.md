@@ -14,6 +14,7 @@ GymMax is a simple, local solution to visualize E-Gym progress without having to
 - The Excel file has a specific format: the first 3 lines are often metadata or empty. The header begins at index 3 (4th row).
 - Column names correspond to the names of the fitness machines/exercises.
 - There is always a `Datum` (Date) column.
+- **CRITICAL**: The entries represent individual strength measurements (Kraftmessungen), not regular training sessions. A date indicates when a strength test was performed.
 - Categories (Upper body/Core/Lower body) are specified in the 3rd row (index 2).
 
 ### Error Handling

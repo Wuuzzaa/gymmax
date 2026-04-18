@@ -10,11 +10,12 @@ GymMax is a monolithic web application based on the Flask framework. It serves a
 
 1.  **Data Source**: An Excel file (`Egym Gewichte.xlsx`).
     - Format: A `Datum` (Date) column and additional columns for each exercise.
+    - Context: Each entry represents a strength measurement (Kraftmessung).
     - Metadata: The headers are located in the 4th row (index 3).
 2.  **Data Management (`data_manager.py`)**:
     - `GymDataManager`: Encapsulates all data access and processing logic.
     - `load_data_with_categories()`: Reads the Excel file with `pandas`, handles multi-level headers for categories, and cleans the data.
-    - `get_all_stats(df)`: Calculates the current maximum weight, difference from the previous workout, and the date of the last increase for each exercise.
+    - `get_all_stats(df)`: Calculates the current maximum weight, difference from the previous measurement, and the date of the last increase for each exercise.
 3.  **Routing (`app.py`)**:
     - `/`: Displays the dashboard with aggregated statistics and overview.
     - `/exercise/<name>`: Displays the detailed page for a specific exercise.
