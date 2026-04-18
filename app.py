@@ -44,6 +44,14 @@ def index():
     last_increased = max([s for s in stats if s['last_increase_date']], 
                         key=lambda x: x['last_increase_date'], default=None)
 
+    # Urgent measurements (over 28 days)
+    urgent_measurements = sorted([s for s in stats if s['measurement_status'] == 'urgent'],
+                                key=lambda x: x['days_since_last'], reverse=True)
+    
+    # Due measurements (over 21 days)
+    due_measurements = sorted([s for s in stats if s['measurement_status'] == 'due'],
+                             key=lambda x: x['days_since_last'], reverse=True)
+
     # Find stagnating exercises (longest time without improvement)
     stagnating = sorted([s for s in stats if s['last_increase_date'] is not None],
                        key=lambda x: x['last_increase_date'])[:3]
@@ -58,6 +66,8 @@ def index():
         stats_by_category=stats_by_category,
         category_order=category_order,
         last_increased=last_increased,
+        urgent_measurements=urgent_measurements,
+        due_measurements=due_measurements,
         stagnating=stagnating,
         latest_date=latest_date
     )

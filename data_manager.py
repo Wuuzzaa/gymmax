@@ -151,6 +151,17 @@ class GymDataManager:
                     days_since_increase = (today - last_increase_date).days
                     break
 
+        days_since_last = (today - latest_dt).days
+        
+        # Recommendation for next strength measurement (e.g. every 28 days)
+        # We define a score: higher means more urgent
+        # Status: 'urgent' (>28 days), 'due' (>21 days), 'ok' (<=21 days)
+        measurement_status = 'ok'
+        if days_since_last > 28:
+            measurement_status = 'urgent'
+        elif days_since_last > 21:
+            measurement_status = 'due'
+
         return {
             'name': exercise,
             'current_max': latest_val,
@@ -159,7 +170,8 @@ class GymDataManager:
             'quarter_increase_pct': quarter_increase_pct,
             'diff': diff,
             'last_date': latest_dt.strftime('%d.%m.%Y'),
-            'days_since_last': (today - latest_dt).days,
+            'days_since_last': days_since_last,
+            'measurement_status': measurement_status,
             'last_increase_date': last_increase_date,
             'days_since_increase': days_since_increase,
             'icon': self._get_exercise_icon(exercise),

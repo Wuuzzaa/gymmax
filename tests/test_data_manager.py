@@ -41,6 +41,7 @@ class TestGymDataManager(unittest.TestCase):
         self.assertEqual(ex1_stat['quarter_increase_pct'], 10.0) # Within 90 days
         self.assertEqual(ex1_stat['category'], 'Upper Body')
         self.assertIsNotNone(ex1_stat['last_increase_date'])
+        self.assertIn('measurement_status', ex1_stat)
         
         # Check Exercise2 (no increase)
         ex2_stat = next(s for s in stats if s['name'] == 'Exercise2')
@@ -48,6 +49,22 @@ class TestGymDataManager(unittest.TestCase):
         self.assertEqual(ex2_stat['diff'], 0.0)
         self.assertEqual(ex2_stat['total_increase_pct'], 0.0)
         self.assertIsNone(ex2_stat['last_increase_date'])
+        self.assertIn('measurement_status', ex2_stat)
+
+    def test_measurement_status(self):
+        # Create a dummy DataFrame with old date
+        old_date = datetime.now() - pd.Timedelta(days=30)
+        data = {'Datum': [old_date], 'Exercise': [50.0]}
+        df = pd.DataFrame(data)
+        
+        stats = self.data_manager.get_exercise_stats(df, 'Exercise')
+        self.assertEqual(stats['measurement_status'], 'urgent')
+        
+        recent_date = datetime.now() - pd.Timedelta(days=5)
+        data_recent = {'Datum': [recent_date], 'Exercise': [50.0]}
+        df_recent = pd.DataFrame(data_recent)
+        stats_recent = self.data_manager.get_exercise_stats(df_recent, 'Exercise')
+        self.assertEqual(stats_recent['measurement_status'], 'ok')
 
 if __name__ == '__main__':
     unittest.main()
