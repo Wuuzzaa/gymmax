@@ -1,0 +1,46 @@
+import unittest
+from unittest.mock import patch
+import pandas as pd
+from datetime import datetime
+from app import app
+
+class TestApp(unittest.TestCase):
+    def setUp(self):
+        app.testing = True
+        self.client = app.test_client()
+
+    @patch('data_manager.GymDataManager.load_data_with_categories')
+    def test_index_route_empty(self, mock_load):
+        # Mock empty data
+        mock_load.return_value = (pd.DataFrame(columns=['Datum']), {}, [])
+        
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'N/A', response.data)
+
+    @patch('data_manager.GymDataManager.load_data_with_categories')
+    def test_index_route_with_data(self, mock_load):
+        # Mock data
+        df = pd.DataFrame({
+            'Datum': [datetime(2023, 1, 1)],
+            'Beinpresse': [100.0]
+        })
+        category_map = {'Beinpresse': 'Legs'}
+        category_order = ['Legs']
+        mock_load.return_value = (df, category_map, category_order)
+        
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Beinpresse', response.data)
+
+    @patch('data_manager.GymDataManager.load_data_with_categories')
+    def test_details_route_not_found(self, mock_load):
+        # Mock data
+        df = pd.DataFrame({'Datum': [datetime(2023, 1, 1)]})
+        mock_load.return_value = (df, {}, [])
+        
+        response = self.client.get('/exercise/Unknown')
+        self.assertEqual(response.status_code, 404)
+
+if __name__ == '__main__':
+    unittest.main()
