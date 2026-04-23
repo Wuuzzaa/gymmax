@@ -40,9 +40,12 @@ def index():
     stats = data_manager.get_all_stats(df, category_map)
     categories, stats_by_category = get_template_data(df, category_map, category_order, stats)
 
-    # Find the exercise that was most recently increased
-    last_increased = max([s for s in stats if s['last_increase_date']], 
-                        key=lambda x: x['last_increase_date'], default=None)
+    # Find exercises increased in the last 7 days
+    # Using fixed reference date for tests if necessary, but here we use datetime.now()
+    now_dt = datetime.now()
+    seven_days_ago = now_dt - pd.Timedelta(days=7)
+    recent_successes = [s for s in stats if s['last_increase_date'] and s['last_increase_date'].replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None)]
+    recent_successes = sorted(recent_successes, key=lambda x: x['last_increase_date'], reverse=True)
 
     # Urgent measurements (over 28 days)
     urgent_measurements = sorted([s for s in stats if s['measurement_status'] == 'urgent'],
@@ -68,7 +71,7 @@ def index():
         categories=categories,
         stats_by_category=stats_by_category,
         category_order=category_order,
-        last_increased=last_increased,
+        recent_successes=recent_successes,
         urgent_measurements=urgent_measurements,
         due_measurements=due_measurements,
         stagnating=stagnating,

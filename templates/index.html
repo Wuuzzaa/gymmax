@@ -20,7 +20,7 @@
     </div>
 </div>
 
-{% if last_increased or urgent_measurements or due_measurements %}
+{% if recent_successes or urgent_measurements or due_measurements %}
 <div class="row mb-4">
     <!-- Fokus: Kraftmessung Empfehlungen -->
     <div class="col-xl-8 col-lg-7 mb-4">
@@ -75,15 +75,21 @@
 
     <!-- Highlights & Stagnation -->
     <div class="col-xl-4 col-lg-5">
-        {% if last_increased %}
+        {% if recent_successes %}
         <div class="card border-0 shadow-sm mb-4 bg-success bg-opacity-10">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                <h6 class="card-subtitle text-success text-uppercase small fw-bold">Erfolge letzte 7 Tage</h6>
+            </div>
             <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-success text-uppercase small fw-bold">Letzter Erfolg</h6>
-                <h5 class="card-title mb-1">{{ last_increased.name }}</h5>
-                <div class="h4 mb-2">{{ last_increased.current_max }} kg 
-                    <span class="text-success small"><i class="fas fa-caret-up"></i> {{ last_increased.diff }} kg</span>
+                {% for success in recent_successes %}
+                <div class="{% if not loop.first %}mt-3 pt-3 border-top border-success border-opacity-10{% endif %}">
+                    <h5 class="card-title mb-1 small fw-bold">{{ success.name }}</h5>
+                    <div class="h5 mb-1">{{ success.current_max }} kg 
+                        <span class="text-success small"><i class="fas fa-caret-up"></i> {{ success.diff }} kg</span>
+                    </div>
+                    <div class="text-muted small">vor {{ success.days_since_increase }} Tagen</div>
                 </div>
-                <div class="text-muted small">vor {{ last_increased.days_since_increase }} Tagen</div>
+                {% endfor %}
             </div>
         </div>
         {% endif %}
