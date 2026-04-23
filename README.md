@@ -37,7 +37,7 @@ Then open `http://127.0.0.1:5000` in your browser.
 
 ## Tests
 
-Alle Unit-Tests können mit einem einzigen Befehl ausgeführt werden:
+All unit tests can be executed with a single command:
 
 ```bash
 python -m unittest discover tests
@@ -50,10 +50,15 @@ python -m unittest discover tests
 - `Egym Gewichte.xlsx`: Data source (standard export format).
 - `templates/`: HTML templates for the frontend.
 - `requirements.txt`: Required Python libraries.
-- `tests/`: Enthält Unit-Tests für Datenmanagement und die Web-App.
+- `tests/`: Contains unit tests for data management and the web app.
 - `AI.md`: Context and guidelines for AI agents.
 - `ARCHITECTURE.md`: Technical documentation of the system.
 
-## License
+## Development & Refactoring
+
+This project follows strict clean code and refactoring guidelines:
+- **English Only**: All code, comments, and documentation must be in English.
+- **Refactoring First**: We prioritize maintainable code over quick hacks. Follow the guidelines in `AI.md`.
+- **Testing**: Maintain high test coverage for both data logic and web routes.
 
 This project is licensed under the MIT License. See the LICENSE file for more details.

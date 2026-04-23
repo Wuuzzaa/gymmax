@@ -37,6 +37,12 @@ Responsible for handling web requests, calling the data manager, and providing d
 - `test_data_manager.py`: Unit tests for data loading and processing logic.
 - `test_app.py`: Integration tests for web routes and views.
 
+## Refactoring Principles
+To ensure long-term maintainability, the following principles apply:
+- **Separation of Concerns**: Keep business logic out of `app.py`. Routes should only coordinate between the `GymDataManager` and the templates.
+- **Model-View-Controller (MVC)**: Although not a strict MVC setup, `data_manager.py` acts as the Model, `templates/` as the View, and `app.py` as the Controller.
+- **Statelessness**: The application should remain mostly stateless, reading the source of truth from the Excel file.
+
 ## External Dependencies
 - **Pandas**: Data manipulation and processing.
 - **Plotly**: Chart generation.

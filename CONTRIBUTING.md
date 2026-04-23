@@ -19,10 +19,12 @@ Thank you for your interest in contributing to GymMax! Here are some guidelines 
 1.  Fork the repository.
 2.  Create a new branch (`git checkout -b feature/my-new-feature`).
 3.  Implement your changes.
-4.  **Ensure all comments are in English.**
-5.  Ensure all tests pass (see below).
-6.  Commit your changes with a meaningful message.
-7.  Push the branch and create a Pull Request.
+4.  **Refactoring**: Ensure your code follows the refactoring guidelines in `AI.md` (SOLID, DRY, Type Hinting).
+5.  **Documentation**: Update `README.md`, `ARCHITECTURE.md`, or `AI.md` if your changes affect the system structure or AI guidelines.
+6.  **Language**: All comments and documentation must be in English.
+7.  **Testing**: Ensure all tests pass (see below).
+8.  Commit your changes with a meaningful message.
+9.  Push the branch and create a Pull Request.
 
 ## Development Environment
 

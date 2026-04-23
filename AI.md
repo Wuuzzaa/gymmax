@@ -22,12 +22,14 @@ GymMax is a simple, local solution to visualize E-Gym progress without having to
 - Routes should return a `404` error if an exercise does not exist.
 - Input validation for Excel file presence and format should be implemented.
 
-### Style Guidelines
-- Use `f-strings` for string formatting.
-- **All comments must be written in English.**
-- Use type hints for functions and methods.
-- Use Bootstrap classes for frontend design.
-- Encapsulate data logic into classes (e.g., `GymDataManager`).
+### Style & Refactoring Guidelines
+- **Solid Principles**: Maintain a clear separation of concerns. Data logic stays in `data_manager.py`, presentation in templates, and routing in `app.py`.
+- **DRY (Don't Repeat Yourself)**: Extract common logic into reusable methods within `GymDataManager`.
+- **Type Hinting**: All new functions and methods must use Python type hints for better maintainability and IDE support.
+- **Refactoring First**: Before adding complex new features, check if existing code needs refactoring to support the change cleanly.
+- **English Only**: All code identifiers, comments, docstrings, and documentation must be in English.
+- **Variable Naming**: Use descriptive, intention-revealing names (e.g., `days_since_last_measurement` instead of `d`).
+- **Function Size**: Keep functions focused and small. If a function does too many things, split it.
 
 ## Known Limitations
 - The application currently re-reads data on every request. For large datasets, a caching mechanism should be considered.
