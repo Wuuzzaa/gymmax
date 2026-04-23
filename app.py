@@ -56,6 +56,9 @@ def index():
     stagnating = sorted([s for s in stats if s['last_increase_date'] is not None],
                        key=lambda x: x['last_increase_date'])[:3]
 
+    # Progress table data (sorted by days_since_increase descending)
+    progress_table = sorted(stats, key=lambda x: x['days_since_increase'] if x['days_since_increase'] is not None else -1, reverse=True)
+
     # Global last measurement date for the badge
     latest_dt = pd.to_datetime(df['Datum']).dropna().max() if 'Datum' in df.columns else None
     latest_date = latest_dt.strftime('%d.%m.%Y') if pd.notna(latest_dt) else 'N/A'
@@ -69,6 +72,7 @@ def index():
         urgent_measurements=urgent_measurements,
         due_measurements=due_measurements,
         stagnating=stagnating,
+        progress_table=progress_table,
         latest_date=latest_date
     )
 

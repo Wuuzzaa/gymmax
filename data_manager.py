@@ -150,6 +150,11 @@ class GymDataManager:
                     last_increase_date = series['Datum'].iloc[i]
                     days_since_increase = (today - last_increase_date).days
                     break
+        
+        # If never increased, use the days since the very first recording or just None
+        # But for sorting as requested, we need a value.
+        if days_since_increase is None and not series.empty:
+             days_since_increase = (today - series['Datum'].iloc[0]).days
 
         days_since_last = (today - latest_dt).days
         
@@ -166,6 +171,7 @@ class GymDataManager:
             'name': exercise,
             'current_max': latest_val,
             'first_max': round(first_val, 1),
+            'quarter_max': round(quarter_val, 1),
             'total_increase_pct': total_increase_pct,
             'quarter_increase_pct': quarter_increase_pct,
             'diff': diff,
