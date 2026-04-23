@@ -12,17 +12,19 @@ class GymDataManager:
 
     def __init__(self, file_path: str = DEFAULT_EXCEL_FILE):
         self.file_path = file_path
+        self._cached_df: Optional[pd.DataFrame] = None
+        self._cached_category_map: Optional[Dict[str, str]] = None
+        self._cached_category_order: Optional[List[str]] = None
+        self._last_load_time: Optional[datetime] = None
 
-    def load_data_with_categories(self) -> Tuple[pd.DataFrame, Dict[str, str], List[str]]:
+    def load_data_with_categories(self, force_reload: bool = False) -> Tuple[pd.DataFrame, Dict[str, str], List[str]]:
         """
         Loads the Excel file and extracts exercise data, category mapping, and category order.
-        
-        Returns:
-            Tuple containing:
-            - DataFrame with exercise data and 'Datum' column.
-            - Dictionary mapping exercise names to categories.
-            - List of categories in order.
+        Uses caching to avoid redundant file reads.
         """
+        if not force_reload and self._cached_df is not None:
+            return self._cached_df, self._cached_category_map, self._cached_category_order
+
         try:
             # Read categories (row with Upper body/Core/Lower body) + column names
             raw = pd.read_excel(self.file_path, header=[2, 3])
@@ -71,6 +73,11 @@ class GymDataManager:
                 if any((ex_name in df.columns) for ex_name, ex_cat in category_map.items() if ex_cat == c)
             ]
             
+            self._cached_df = df
+            self._cached_category_map = category_map
+            self._cached_category_order = category_order
+            self._last_load_time = datetime.now()
+
             return df, category_map, category_order
             
         except Exception as e:
@@ -93,6 +100,11 @@ class GymDataManager:
             category_map = {ex: 'Other' for ex in exercises}
             category_order = ['Other']
             
+            self._cached_df = df_simple
+            self._cached_category_map = category_map
+            self._cached_category_order = category_order
+            self._last_load_time = datetime.now()
+
             return df_simple, category_map, category_order
         except Exception as e:
             print(f"Critical error loading data: {e}")
@@ -111,6 +123,77 @@ class GymDataManager:
                 stats.append(exercise_stats)
                 
         return stats
+
+    def get_dashboard_data(self) -> Dict[str, Any]:
+        """
+        Aggregates all data needed for the main dashboard.
+        """
+        df, category_map, category_order = self.load_data_with_categories()
+        if df.empty:
+            return {
+                'stats_by_category': {},
+                'category_order': [],
+                'latest_date': 'N/A',
+                'recent_successes': [],
+                'urgent_measurements': [],
+                'due_measurements': [],
+                'stagnating': [],
+                'progress_table': []
+            }
+
+        stats = self.get_all_stats(df, category_map)
+        
+        # Helper to group stats by category
+        stats_by_category = {cat: [] for cat in category_order}
+        categories_data = []
+        for cat in category_order:
+            cat_stats = [s for s in stats if s.get('category') == cat]
+            stats_by_category[cat] = cat_stats
+            categories_data.append({'name': cat, 'exercises': [s['name'] for s in cat_stats]})
+
+        now_dt = datetime.now()
+        seven_days_ago = now_dt - timedelta(days=7)
+        
+        recent_successes = sorted(
+            [s for s in stats if s['last_increase_date'] and s['last_increase_date'].replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None)],
+            key=lambda x: x['last_increase_date'], reverse=True
+        )
+
+        urgent_measurements = sorted(
+            [s for s in stats if s['measurement_status'] == 'urgent'],
+            key=lambda x: x['days_since_last'], reverse=True
+        )
+        
+        due_measurements = sorted(
+            [s for s in stats if s['measurement_status'] == 'due'],
+            key=lambda x: x['days_since_last'], reverse=True
+        )
+
+        stagnating = sorted(
+            [s for s in stats if s['last_increase_date'] is not None],
+            key=lambda x: x['last_increase_date']
+        )[:3]
+
+        progress_table = sorted(
+            stats, 
+            key=lambda x: x['days_since_increase'] if x['days_since_increase'] is not None else -1, 
+            reverse=True
+        )
+
+        latest_dt = pd.to_datetime(df['Datum']).dropna().max() if 'Datum' in df.columns else None
+        latest_date = latest_dt.strftime('%d.%m.%Y') if pd.notna(latest_dt) else 'N/A'
+
+        return {
+            'categories': categories_data,
+            'stats_by_category': stats_by_category,
+            'category_order': category_order,
+            'recent_successes': recent_successes,
+            'urgent_measurements': urgent_measurements,
+            'due_measurements': due_measurements,
+            'stagnating': stagnating,
+            'progress_table': progress_table,
+            'latest_date': latest_date
+        }
 
     def get_exercise_stats(self, df: pd.DataFrame, exercise: str, category_map: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
         """
@@ -195,7 +278,8 @@ class GymDataManager:
             'last_increase_date': last_increase_date,
             'days_since_increase': days_since_increase,
             'icon': self._get_exercise_icon(exercise),
-            'category': category_map.get(exercise) if category_map else None
+            'category': category_map.get(exercise) if category_map else None,
+            'history': series.tail(10).to_dict('records') # Added for details view
         }
 
     @staticmethod
