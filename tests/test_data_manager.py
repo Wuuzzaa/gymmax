@@ -39,6 +39,10 @@ class TestGymDataManager(unittest.TestCase):
         self.assertEqual(ex1_stat['diff'], 5.0)
         self.assertEqual(ex1_stat['total_increase_pct'], 10.0)  # (55-50)/50 * 100
         self.assertEqual(ex1_stat['quarter_increase_pct'], 10.0) # Within 90 days
+        self.assertEqual(ex1_stat['month_increase_pct'], 10.0) # Within 30 days
+        self.assertEqual(ex1_stat['total_increase_abs'], 5.0)
+        self.assertEqual(ex1_stat['quarter_increase_abs'], 5.0)
+        self.assertEqual(ex1_stat['month_increase_abs'], 5.0)
         self.assertEqual(ex1_stat['category'], 'Upper Body')
         self.assertIsNotNone(ex1_stat['last_increase_date'])
         self.assertIn('measurement_status', ex1_stat)

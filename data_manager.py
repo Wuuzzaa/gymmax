@@ -128,13 +128,22 @@ class GymDataManager:
         first_val = float(series[exercise].iloc[0])
         
         # Increases
-        total_increase_pct = round(((latest_val - first_val) / first_val) * 100, 1) if first_val > 0 else 0.0
+        total_increase_abs = round(latest_val - first_val, 1)
+        total_increase_pct = round((total_increase_abs / first_val) * 100, 1) if first_val > 0 else 0.0
         
         # Quarter increase (last 90 days)
         quarter_ago = latest_dt - timedelta(days=90)
-        old_series = series[series['Datum'] <= quarter_ago]
-        quarter_val = float(old_series[exercise].iloc[-1]) if not old_series.empty else first_val
-        quarter_increase_pct = round(((latest_val - quarter_val) / quarter_val) * 100, 1) if quarter_val > 0 else 0.0
+        old_series_q = series[series['Datum'] <= quarter_ago]
+        quarter_val = float(old_series_q[exercise].iloc[-1]) if not old_series_q.empty else first_val
+        quarter_increase_abs = round(latest_val - quarter_val, 1)
+        quarter_increase_pct = round((quarter_increase_abs / quarter_val) * 100, 1) if quarter_val > 0 else 0.0
+
+        # Month increase (last 30 days)
+        month_ago = latest_dt - timedelta(days=30)
+        old_series_m = series[series['Datum'] <= month_ago]
+        month_val = float(old_series_m[exercise].iloc[-1]) if not old_series_m.empty else first_val
+        month_increase_abs = round(latest_val - month_val, 1)
+        month_increase_pct = round((month_increase_abs / month_val) * 100, 1) if month_val > 0 else 0.0
 
         diff = 0.0
         last_increase_date = None
@@ -172,8 +181,13 @@ class GymDataManager:
             'current_max': latest_val,
             'first_max': round(first_val, 1),
             'quarter_max': round(quarter_val, 1),
+            'month_max': round(month_val, 1),
+            'total_increase_abs': total_increase_abs,
             'total_increase_pct': total_increase_pct,
+            'quarter_increase_abs': quarter_increase_abs,
             'quarter_increase_pct': quarter_increase_pct,
+            'month_increase_abs': month_increase_abs,
+            'month_increase_pct': month_increase_pct,
             'diff': diff,
             'last_date': latest_dt.strftime('%d.%m.%Y'),
             'days_since_last': days_since_last,

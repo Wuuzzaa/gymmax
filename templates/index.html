@@ -115,36 +115,52 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" id="progressTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Übung</th>
-                                <th class="text-center">Startgewicht</th>
-                                <th class="text-center">Start Quartal</th>
-                                <th class="text-center">Aktuelles Gewicht</th>
-                                <th class="text-center">Verbesserung</th>
-                                <th class="text-center">Letzte Steigerung</th>
+                                <th style="cursor: pointer;" onclick="sortTable(0)">Übung <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(1)">Aktuell <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(2)">Start <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(3)">vor 90 Tagen <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(4)">vor 30 Tagen <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(5)">Letzte Steigerung <i class="fas fa-sort ms-1 small text-muted"></i></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in progress_table %}
                             <tr onclick="location.href='/exercise/{{ item.name }}'" style="cursor: pointer;">
-                                <td>
+                                <td data-sort="{{ item.name }}">
                                     <i class="fas {{ item.icon }} me-2 text-muted"></i>
                                     <strong>{{ item.name }}</strong>
                                 </td>
-                                <td class="text-center">{{ item.first_max }} kg</td>
-                                <td class="text-center">{{ item.quarter_max }} kg</td>
-                                <td class="text-center fw-bold">{{ item.current_max }} kg</td>
-                                <td class="text-center">
+                                <td class="text-center fw-bold" data-sort="{{ item.current_max }}">
+                                    {{ item.current_max }} kg
+                                </td>
+                                <td class="text-center" data-sort="{{ item.total_increase_abs }}">
+                                    <div class="small text-muted">{{ item.first_max }} kg</div>
                                     <span class="text-success small fw-bold">
-                                        +{{ (item.current_max - item.first_max)|round(1) }} kg 
-                                        ({{ item.total_increase_pct }}%)
+                                        +{{ item.total_increase_abs }} kg ({{ item.total_increase_pct }}%)
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <span class="badge {% if item.days_since_increase <= 7 %}bg-success{% elif item.days_since_increase <= 21 %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
-                                        vor {{ item.days_since_increase }} Tagen
+                                <td class="text-center" data-sort="{{ item.quarter_increase_abs }}">
+                                    <div class="small text-muted">{{ item.quarter_max }} kg</div>
+                                    <span class="{% if item.quarter_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
+                                        +{{ item.quarter_increase_abs }} kg ({{ item.quarter_increase_pct }}%)
+                                    </span>
+                                </td>
+                                <td class="text-center" data-sort="{{ item.month_increase_abs }}">
+                                    <div class="small text-muted">{{ item.month_max }} kg</div>
+                                    <span class="{% if item.month_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
+                                        +{{ item.month_increase_abs }} kg ({{ item.month_increase_pct }}%)
+                                    </span>
+                                </td>
+                                <td class="text-center" data-sort="{{ item.days_since_increase if item.days_since_increase is not none else 9999 }}">
+                                    <span class="badge {% if item.days_since_increase is not none and item.days_since_increase <= 7 %}bg-success{% elif item.days_since_increase is not none and item.days_since_increase <= 21 %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
+                                        {% if item.days_since_increase is not none %}
+                                            vor {{ item.days_since_increase }} Tagen
+                                        {% else %}
+                                            Keine Steigerung
+                                        {% endif %}
                                     </span>
                                 </td>
                             </tr>
@@ -173,7 +189,10 @@
                             {% if stat.diff > 0 %}+{% endif %}{{ stat.diff }} kg
                         </span>
                         <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
-                            Quartal: {% if stat.quarter_increase_pct > 0 %}+{% endif %}{{ stat.quarter_increase_pct }}%
+                            30d: {% if stat.month_increase_pct > 0 %}+{% endif %}{{ stat.month_increase_pct }}%
+                        </span>
+                        <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
+                            90d: {% if stat.quarter_increase_pct > 0 %}+{% endif %}{{ stat.quarter_increase_pct }}%
                         </span>
                         <span class="badge bg-light text-dark rounded-pill" style="font-size: 0.7rem;">
                             Gesamt: {% if stat.total_increase_pct > 0 %}+{% endif %}{{ stat.total_increase_pct }}%
@@ -201,4 +220,63 @@
     {% endfor %}
 </div>
 {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let sortOrder = {};
+
+    function sortTable(n) {
+        const table = document.getElementById("progressTable");
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        const headers = table.tHead.rows[0].cells;
+        
+        // Reset icons
+        for (let i = 0; i < headers.length; i++) {
+            const icon = headers[i].querySelector('i');
+            if (icon) {
+                icon.className = 'fas fa-sort ms-1 small text-muted';
+            }
+        }
+
+        // Toggle sort order
+        if (!sortOrder[n] || sortOrder[n] === 'desc') {
+            sortOrder[n] = 'asc';
+        } else {
+            sortOrder[n] = 'desc';
+        }
+
+        // Update current icon
+        const currentIcon = headers[n].querySelector('i');
+        if (currentIcon) {
+            currentIcon.className = `fas fa-sort-${sortOrder[n] === 'asc' ? 'up' : 'down'} ms-1 small text-primary`;
+        }
+
+        const sortedRows = rows.sort((a, b) => {
+            let x = a.cells[n].getAttribute('data-sort');
+            let y = b.cells[n].getAttribute('data-sort');
+            
+            // Try numeric comparison if both look like numbers
+            if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {
+                return sortOrder[n] === 'asc' ? parseFloat(x) - parseFloat(y) : parseFloat(y) - parseFloat(x);
+            }
+            
+            // String comparison
+            x = x.toLowerCase();
+            y = y.toLowerCase();
+            if (sortOrder[n] === 'asc') {
+                return x.localeCompare(y);
+            } else {
+                return y.localeCompare(x);
+            }
+        });
+
+        // Re-append sorted rows
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+        }
+        tbody.append(...sortedRows);
+    }
+</script>
 {% endblock %}
