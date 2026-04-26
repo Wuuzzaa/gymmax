@@ -214,19 +214,29 @@ class GymDataManager:
         total_increase_abs = round(latest_val - first_val, 1)
         total_increase_pct = round((total_increase_abs / first_val) * 100, 1) if first_val > 0 else 0.0
         
-        # Quarter increase (last 90 days)
-        quarter_ago = latest_dt - timedelta(days=90)
-        old_series_q = series[series['Datum'] <= quarter_ago]
-        quarter_val = float(old_series_q[exercise].iloc[-1]) if not old_series_q.empty else first_val
-        quarter_increase_abs = round(latest_val - quarter_val, 1)
-        quarter_increase_pct = round((quarter_increase_abs / quarter_val) * 100, 1) if quarter_val > 0 else 0.0
+        # 90 Tage Steigerung (entspricht Quartal)
+        days_90_ago = latest_dt - timedelta(days=90)
+        old_series_90 = series[series['Datum'] <= days_90_ago]
+        val_90 = float(old_series_90[exercise].iloc[-1]) if not old_series_90.empty else first_val
+        increase_90_abs = round(latest_val - val_90, 1)
+        increase_90_pct = round((increase_90_abs / val_90) * 100, 1) if val_90 > 0 else 0.0
 
-        # Month increase (last 30 days)
-        month_ago = latest_dt - timedelta(days=30)
-        old_series_m = series[series['Datum'] <= month_ago]
-        month_val = float(old_series_m[exercise].iloc[-1]) if not old_series_m.empty else first_val
-        month_increase_abs = round(latest_val - month_val, 1)
-        month_increase_pct = round((month_increase_abs / month_val) * 100, 1) if month_val > 0 else 0.0
+        # 30 Tage Steigerung
+        days_30_ago = latest_dt - timedelta(days=30)
+        old_series_30 = series[series['Datum'] <= days_30_ago]
+        val_30 = float(old_series_30[exercise].iloc[-1]) if not old_series_30.empty else first_val
+        increase_30_abs = round(latest_val - val_30, 1)
+        increase_30_pct = round((increase_30_abs / val_30) * 100, 1) if val_30 > 0 else 0.0
+
+        # 7 Tage Steigerung
+        days_7_ago = latest_dt - timedelta(days=7)
+        old_series_7 = series[series['Datum'] <= days_7_ago]
+        val_7 = float(old_series_7[exercise].iloc[-1]) if not old_series_7.empty else first_val
+        increase_7_abs = round(latest_val - val_7, 1)
+        increase_7_pct = round((increase_7_abs / val_7) * 100, 1) if val_7 > 0 else 0.0
+
+        # All-time high
+        max_val = round(float(series[exercise].max()), 1)
 
         diff = 0.0
         last_increase_date = None
@@ -262,15 +272,18 @@ class GymDataManager:
         return {
             'name': exercise,
             'current_max': latest_val,
+            'max_ever': max_val,
             'first_max': round(first_val, 1),
-            'quarter_max': round(quarter_val, 1),
-            'month_max': round(month_val, 1),
+            'val_90': round(val_90, 1),
+            'val_30': round(val_30, 1),
+            'increase_90_abs': increase_90_abs,
+            'increase_90_pct': increase_90_pct,
+            'increase_30_abs': increase_30_abs,
+            'increase_30_pct': increase_30_pct,
+            'increase_7_abs': increase_7_abs,
+            'increase_7_pct': increase_7_pct,
             'total_increase_abs': total_increase_abs,
             'total_increase_pct': total_increase_pct,
-            'quarter_increase_abs': quarter_increase_abs,
-            'quarter_increase_pct': quarter_increase_pct,
-            'month_increase_abs': month_increase_abs,
-            'month_increase_pct': month_increase_pct,
             'diff': diff,
             'last_date': latest_dt.strftime('%d.%m.%Y'),
             'days_since_last': days_since_last,

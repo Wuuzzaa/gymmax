@@ -38,11 +38,17 @@ class TestGymDataManager(unittest.TestCase):
         self.assertEqual(ex1_stat['current_max'], 55.0)
         self.assertEqual(ex1_stat['diff'], 5.0)
         self.assertEqual(ex1_stat['total_increase_pct'], 10.0)  # (55-50)/50 * 100
-        self.assertEqual(ex1_stat['quarter_increase_pct'], 10.0) # Within 90 days
-        self.assertEqual(ex1_stat['month_increase_pct'], 10.0) # Within 30 days
+        self.assertEqual(ex1_stat['increase_90_pct'], 10.0) # Within 90 days
+        self.assertEqual(ex1_stat['increase_30_pct'], 10.0) # Within 30 days
+        
+        # dates = [Jan 1, Jan 10]. Latest is Jan 10. 7 days ago is Jan 3. 
+        # Jan 1 <= Jan 3, so val_7 = 50.0. Increase is 5.0 (10%).
+        self.assertEqual(ex1_stat['increase_7_pct'], 10.0) 
+        
         self.assertEqual(ex1_stat['total_increase_abs'], 5.0)
-        self.assertEqual(ex1_stat['quarter_increase_abs'], 5.0)
-        self.assertEqual(ex1_stat['month_increase_abs'], 5.0)
+        self.assertEqual(ex1_stat['increase_90_abs'], 5.0)
+        self.assertEqual(ex1_stat['increase_30_abs'], 5.0)
+        self.assertEqual(ex1_stat['increase_7_abs'], 5.0)
         self.assertEqual(ex1_stat['category'], 'Upper Body')
         self.assertIsNotNone(ex1_stat['last_increase_date'])
         self.assertIn('measurement_status', ex1_stat)

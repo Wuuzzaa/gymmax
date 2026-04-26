@@ -166,16 +166,16 @@
                                         +{{ item.total_increase_abs }} kg ({{ item.total_increase_pct }}%)
                                     </span>
                                 </td>
-                                <td class="text-center" data-sort-abs="{{ item.quarter_increase_abs }}" data-sort-pct="{{ item.quarter_increase_pct }}">
-                                    <div class="small text-muted">{{ item.quarter_max }} kg</div>
-                                    <span class="{% if item.quarter_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
-                                        +{{ item.quarter_increase_abs }} kg ({{ item.quarter_increase_pct }}%)
+                                <td class="text-center" data-sort-abs="{{ item.increase_90_abs }}" data-sort-pct="{{ item.increase_90_pct }}">
+                                    <div class="small text-muted">{{ item.val_90 }} kg</div>
+                                    <span class="{% if item.increase_90_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
+                                        +{{ item.increase_90_abs }} kg ({{ item.increase_90_pct }}%)
                                     </span>
                                 </td>
-                                <td class="text-center" data-sort-abs="{{ item.month_increase_abs }}" data-sort-pct="{{ item.month_increase_pct }}">
-                                    <div class="small text-muted">{{ item.month_max }} kg</div>
-                                    <span class="{% if item.month_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
-                                        +{{ item.month_increase_abs }} kg ({{ item.month_increase_pct }}%)
+                                <td class="text-center" data-sort-abs="{{ item.increase_30_abs }}" data-sort-pct="{{ item.increase_30_pct }}">
+                                    <div class="small text-muted">{{ item.val_30 }} kg</div>
+                                    <span class="{% if item.increase_30_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
+                                        +{{ item.increase_30_abs }} kg ({{ item.increase_30_pct }}%)
                                     </span>
                                 </td>
                                 <td class="text-center" data-sort="{{ item.days_since_increase if item.days_since_increase is not none else 9999 }}">
@@ -213,10 +213,10 @@
                             {% if stat.diff > 0 %}+{% endif %}{{ stat.diff }} kg
                         </span>
                         <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
-                            30d: {% if stat.month_increase_pct > 0 %}+{% endif %}{{ stat.month_increase_pct }}%
+                            30d: {% if stat.increase_30_pct > 0 %}+{% endif %}{{ stat.increase_30_pct }}%
                         </span>
                         <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.7rem;">
-                            90d: {% if stat.quarter_increase_pct > 0 %}+{% endif %}{{ stat.quarter_increase_pct }}%
+                            90d: {% if stat.increase_90_pct > 0 %}+{% endif %}{{ stat.increase_90_pct }}%
                         </span>
                         <span class="badge bg-light text-dark rounded-pill" style="font-size: 0.7rem;">
                             Gesamt: {% if stat.total_increase_pct > 0 %}+{% endif %}{{ stat.total_increase_pct }}%
