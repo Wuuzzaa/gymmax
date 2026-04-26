@@ -45,15 +45,49 @@
                 <input type="number" id="weight" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" oninput="updatePrompt()">
             </div>
         </div>
+
+        <h5 class="card-title mb-3 mt-4">Trainingskontext (optional)</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="goal" class="form-label small">Trainingsziel</label>
+                <select id="goal" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
+                    <option value="">Nicht angegeben</option>
+                    <option value="Muskelaufbau (Hypertrophie)">Muskelaufbau</option>
+                    <option value="Kraftsteigerung">Kraftsteigerung</option>
+                    <option value="Fettabbau / Definition">Fettabbau</option>
+                    <option value="Ausdauer & Fitness">Ausdauer & Fitness</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="frequency" class="form-label small">Trainingshäufigkeit (pro Woche)</label>
+                <input type="number" id="frequency" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 3" oninput="updatePrompt()">
+            </div>
+            <div class="col-md-4">
+                <label for="experience" class="form-label small">Trainingserfahrung</label>
+                <select id="experience" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
+                    <option value="">Nicht angegeben</option>
+                    <option value="Anfänger">Anfänger</option>
+                    <option value="Fortgeschritten">Fortgeschritten</option>
+                    <option value="Profi">Profi</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label for="notes" class="form-label small">Zusätzliche Infos (Verletzungen, Ernährung, Fokus)</label>
+                <textarea id="notes" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" placeholder="z.B. Fokus auf Oberkörper, esse im Kaloriendefizit, leichte Knieprobleme" oninput="updatePrompt()"></textarea>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="card bg-black border-primary">
     <div class="card-body">
         <pre id="ai-prompt" style="white-space: pre-wrap; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
-Du bist ein erfahrener Fitnessprofi und Personal Trainer. Analysiere meine Trainingsfortschritte basierend auf den folgenden E-Gym Daten (Stand: {{ latest_date }}).
+Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
+
+Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).
+
 <span id="user-context"></span>
-Hier sind meine aktuellen Statistiken für verschiedene Übungen:
+Hier sind meine aktuellen Statistiken:
 {% for ex in exercises %}
 - {{ ex.Name }} ({{ ex.Kategorie }}):
   * Aktuelles Gewicht: {{ ex['Aktuelles Gewicht'] }}
@@ -62,18 +96,19 @@ Hier sind meine aktuellen Statistiken für verschiedene Übungen:
   * Letzte Steigerung: {{ ex['Letzte Steigerung'] }}
 {% endfor %}
 
-Bitte gib mir:
-1. Eine professionelle Analyse meiner Gesamtsituation.
-2. Identifiziere Übungen, bei denen ich besonders gute Fortschritte mache und erkläre warum.
-3. Identifiziere "Plateaus" oder Übungen mit wenig Fortschritt und führe eine detaillierte Ursachenanalyse durch. Gib hierzu besonders ausführliche und konkrete Tipps, wie ich diese Hindernisse überwinden kann. Dies ist der wichtigste Teil der Analyse, gehe daher sehr tief ins Detail. Gehe dabei spezifisch auf folgende Aspekte ein:
-     * Periodisierung: Sollte ich das Volumen, die Wiederholungszahlen oder die Intensität anpassen? Erkläre das Prinzip dahinter.
-     * Technikfokus: Welche typischen technischen Fehler könnten den Fortschritt bei diesen spezifischen Übungen bremsen? Worauf muss ich beim Bewegungsablauf achten?
-     * Pausenzeiten & Belastungssteuerung: Sind die Pausen zwischen den Sätzen zu kurz für eine volle Erholung oder ist die Trainingsfrequenz zu hoch/niedrig?
-     * Assistenzübungen: Welche ergänzenden Übungen (z.B. mit Kurzhanteln oder Kabelzug) könnten helfen, die beteiligte Hilfsmuskulatur zu stärken, um das Plateau bei der Hauptübung zu knacken?
-4. Erstelle einen motivierenden Ausblick für die nächsten 4 Wochen.
-5. Gib mir Empfehlungen, worauf ich bei meiner Ernährung oder Regeneration achten sollte, passend zu diesem Trainingsstand.
+Bitte strukturiere deine Antwort wie folgt:
 
-Antworte präzise, motivierend und fundiert.
+1. **Status-Quo Analyse**: Eine Zusammenfassung meines aktuellen Stands. Wie ist die Balance zwischen den Muskelgruppen?
+2. **Top-Performances**: Bei welchen Übungen mache ich die besten Fortschritte? Analysiere die Gründe (z.B. Übungsreihenfolge, Hebelverhältnisse).
+3. **Plateau- & Ursachenanalyse (Fokus)**: Identifiziere Übungen mit stagnierendem Fortschritt. Führe eine tiefgehende Analyse durch:
+    * **Trainingsvariablen**: Anpassung von Volumen (Sätze/Wdh), Intensität oder Pausenzeiten.
+    * **Biomechanik & Technik**: Spezifische Tipps für den Bewegungsablauf bei diesen Übungen.
+    * **Neurologische Faktoren**: Tipps zur Mind-Muscle-Connection.
+    * **Schwachstellen-Training**: Empfiehl konkrete Assistenzübungen für die Hilfsmuskulatur.
+4. **Strategische Empfehlungen**: Konkrete Schritte für die nächsten 4 Wochen (z.B. Deload-Woche, Fokus-Wechsel).
+5. **Lifestyle-Faktoren**: Spezifische Tipps zu Ernährung (Protein, Kalorien) und Regeneration, die zu meinem Fortschritt und Ziel passen.
+
+Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.
         </pre>
     </div>
 </div>
@@ -96,15 +131,23 @@ function updatePrompt() {
     const age = document.getElementById('age').value;
     const height = document.getElementById('height').value;
     const weight = document.getElementById('weight').value;
+    const goal = document.getElementById('goal').value;
+    const frequency = document.getElementById('frequency').value;
+    const experience = document.getElementById('experience').value;
+    const notes = document.getElementById('notes').value;
     
     let context = "";
-    if (gender || age || height || weight) {
-        context = "\nMeine Daten: ";
-        if (gender) context += `Geschlecht: ${gender}, `;
-        if (age) context += `Alter: ${age} Jahre, `;
-        if (height) context += `Größe: ${height} cm, `;
-        if (weight) context += `Gewicht: ${weight} kg, `;
-        context = context.slice(0, -2) + ".\n";
+    if (gender || age || height || weight || goal || frequency || experience || notes) {
+        context = "\nMeine Daten & Kontext:\n";
+        if (gender) context += `- Geschlecht: ${gender}\n`;
+        if (age) context += `- Alter: ${age} Jahre\n`;
+        if (height) context += `- Größe: ${height} cm\n`;
+        if (weight) context += `- Gewicht: ${weight} kg\n`;
+        if (goal) context += `- Trainingsziel: ${goal}\n`;
+        if (frequency) context += `- Häufigkeit: ${frequency}x pro Woche\n`;
+        if (experience) context += `- Erfahrung: ${experience}\n`;
+        if (notes) context += `- Zusätzliche Anmerkungen: ${notes}\n`;
+        context += "\n";
     }
     
     document.getElementById('user-context').innerText = context;
