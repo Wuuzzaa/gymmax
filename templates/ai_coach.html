@@ -71,6 +71,12 @@
                     <option value="Profi" {% if defaults.experience == 'Profi' %}selected{% endif %}>Profi</option>
                 </select>
             </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check form-switch mb-1">
+                    <input class="form-check-input" type="checkbox" id="funmode" {% if defaults.fun_mode %}checked{% endif %} onchange="updatePrompt()">
+                    <label class="form-check-label small" for="funmode">Markus Rühl Funmode 🥩</label>
+                </div>
+            </div>
             <div class="col-12">
                 <label for="notes" class="form-label small">Zusätzliche Infos (Verletzungen, Ernährung, Fokus)</label>
                 <textarea id="notes" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" placeholder="z.B. Fokus auf Oberkörper, esse im Kaloriendefizit, leichte Knieprobleme" oninput="updatePrompt()">{{ defaults.notes }}</textarea>
@@ -81,10 +87,9 @@
 
 <div class="card bg-black border-primary">
     <div class="card-body">
-        <pre id="ai-prompt" style="white-space: pre-wrap; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
-Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
+        <pre id="ai-prompt" style="white-space: pre-wrap; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;"><span id="prompt-content">Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
 
-Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).
+Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).</span>
 
 <span id="user-context"></span>
 Hier sind meine aktuellen Statistiken:
@@ -96,7 +101,7 @@ Hier sind meine aktuellen Statistiken:
   * Letzte Steigerung: {{ ex['Letzte Steigerung'] }}
 {% endfor %}
 
-Bitte strukturiere deine Antwort wie folgt:
+<span id="prompt-instructions">Bitte strukturiere deine Antwort wie folgt:
 
 1. **Status-Quo Analyse**: Eine Zusammenfassung meines aktuellen Stands. Wie ist die Balance zwischen den Muskelgruppen?
 2. **Top-Performances**: Bei welchen Übungen mache ich die besten Fortschritte? Analysiere die Gründe (z.B. Übungsreihenfolge, Hebelverhältnisse).
@@ -108,8 +113,7 @@ Bitte strukturiere deine Antwort wie folgt:
 4. **Strategische Empfehlungen**: Konkrete Schritte für die nächsten 4 Wochen (z.B. Deload-Woche, Fokus-Wechsel).
 5. **Lifestyle-Faktoren**: Spezifische Tipps zu Ernährung (Protein, Kalorien) und Regeneration, die zu meinem Fortschritt und Ziel passen.
 
-Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.
-        </pre>
+Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.</span></pre>
     </div>
 </div>
 
@@ -138,7 +142,46 @@ function updatePrompt() {
     const frequency = document.getElementById('frequency').value;
     const experience = document.getElementById('experience').value;
     const notes = document.getElementById('notes').value;
+    const funmode = document.getElementById('funmode').checked;
     
+    // Update Role & Intro
+    const promptContent = document.getElementById('prompt-content');
+    const promptInstructions = document.getElementById('prompt-instructions');
+    
+    if (funmode) {
+        promptContent.innerText = `Du bist Markus Rühl, die deutsche Bodybuilding-Legende. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
+
+Deine Analyse soll direkt, hart, humorvoll und im typischen Rühl-Stil sein. Keine wissenschaftliche Weichei-Sprache, sondern Fokus auf schwere Gewichte und "Mass mast". Benutze Begriffe wie "Stabile Form", "Viel hilft viel", "Muss ned schmecke, muss wirke" und "Schwer und falsch ist besser als leicht und richtig".`;
+
+        promptInstructions.innerText = `Bitte strukturiere deine Antwort wie folgt:
+
+1. **Rühl-Check**: Ein kurzes, hartes Urteil zu meinem Stand. Bin ich eine "Maschine" oder noch ein "Lauch"?
+2. **Stabile Übungen**: Wo bewege ich ordentlich Eisen? Lob mich im Rühl-Stil.
+3. **Lauch-Alarm (Plateaus)**: Wo stagniere ich? Sag mir klipp und klar, warum das so ist (wahrscheinlich zu wenig Gewicht oder zu wenig Essen). Gib Tipps im "Schwer und Falsch"-Modus.
+4. **Rühls Schlachtplan**: Was soll ich die nächsten 4 Wochen machen? Fokus auf Fleisch, schwere Sätze und Disziplin.
+5. **Ernährung & Lifestyle**: Erklär mir, warum Reis und Huhn (oder ein ordentlicher Shake) wichtiger sind als Avocado-Toast. 
+
+Antworte auf Deutsch im authentischen Markus Rühl Dialekt/Jargon.`;
+    } else {
+        promptContent.innerText = `Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
+
+Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).`;
+
+        promptInstructions.innerText = `Bitte strukturiere deine Antwort wie folgt:
+
+1. **Status-Quo Analyse**: Eine Zusammenfassung meines aktuellen Stands. Wie ist die Balance zwischen den Muskelgruppen?
+2. **Top-Performances**: Bei welchen Übungen mache ich die besten Fortschritte? Analysiere die Gründe (z.B. Übungsreihenfolge, Hebelverhältnisse).
+3. **Plateau- & Ursachenanalyse (Fokus)**: Identifiziere Übungen mit stagnierendem Fortschritt. Führe eine tiefgehende Analyse durch:
+    * **Trainingsvariablen**: Anpassung von Volumen (Sätze/Wdh), Intensität oder Pausenzeiten.
+    * **Biomechanik & Technik**: Spezifische Tipps für den Bewegungsablauf bei diesen Übungen.
+    * **Neurologische Faktoren**: Tipps zur Mind-Muscle-Connection.
+    * **Schwachstellen-Training**: Empfiehl konkrete Assistenzübungen für die Hilfsmuskulatur.
+4. **Strategische Empfehlungen**: Konkrete Schritte für die nächsten 4 Wochen (z.B. Deload-Woche, Fokus-Wechsel).
+5. **Lifestyle-Faktoren**: Spezifische Tipps zu Ernährung (Protein, Kalorien) und Regeneration, die zu meinem Fortschritt und Ziel passen.
+
+Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.`;
+    }
+
     let context = "";
     if (gender || age || height || weight || goal || frequency || experience || notes) {
         context = "\nMeine Daten & Kontext:\n";
