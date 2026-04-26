@@ -50,6 +50,10 @@ class TestGymDataManager(unittest.TestCase):
         self.assertEqual(ex1_stat['increase_30_abs'], 5.0)
         self.assertEqual(ex1_stat['increase_7_abs'], 5.0)
         self.assertEqual(ex1_stat['category'], 'Upper Body')
+        self.assertIn('trend_7', ex1_stat)
+        self.assertIn('trend_30', ex1_stat)
+        self.assertIn('trend_90', ex1_stat)
+        self.assertIn('trend_all', ex1_stat)
         self.assertIsNotNone(ex1_stat['last_increase_date'])
         self.assertIn('measurement_status', ex1_stat)
         

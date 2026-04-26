@@ -47,6 +47,36 @@
                     Gesamt: {% if ex_stat.total_increase_pct > 0 %}+{% endif %}{{ ex_stat.total_increase_pct }}%
                 </span>
             </div>
+
+            <div class="mt-4">
+                <div class="text-muted small text-uppercase fw-bold mb-2">Trend-Zuwachsraten (kg / Woche)</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="p-2 border rounded bg-light text-center" style="min-width: 70px;">
+                        <div class="small text-muted">7T</div>
+                        <div class="fw-bold {% if ex_stat.trend_7 > 0 %}text-success{% elif ex_stat.trend_7 < 0 %}text-danger{% endif %}">
+                            {{ "%.2f"|format(ex_stat.trend_7) }}
+                        </div>
+                    </div>
+                    <div class="p-2 border rounded bg-light text-center" style="min-width: 70px;">
+                        <div class="small text-muted">30T</div>
+                        <div class="fw-bold {% if ex_stat.trend_30 > 0 %}text-success{% elif ex_stat.trend_30 < 0 %}text-danger{% endif %}">
+                            {{ "%.2f"|format(ex_stat.trend_30) }}
+                        </div>
+                    </div>
+                    <div class="p-2 border rounded bg-light text-center" style="min-width: 70px;">
+                        <div class="small text-muted">90T</div>
+                        <div class="fw-bold {% if ex_stat.trend_90 > 0 %}text-success{% elif ex_stat.trend_90 < 0 %}text-danger{% endif %}">
+                            {{ "%.2f"|format(ex_stat.trend_90) }}
+                        </div>
+                    </div>
+                    <div class="p-2 border rounded bg-primary bg-opacity-10 text-center border-primary border-opacity-25" style="min-width: 70px;">
+                        <div class="small text-muted">Gesamt</div>
+                        <div class="fw-bold {% if ex_stat.trend_all > 0 %}text-success{% elif ex_stat.trend_all < 0 %}text-danger{% endif %}">
+                            {{ "%.2f"|format(ex_stat.trend_all) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% if ex_stat.max_ever > ex_stat.current_max %}
             <div class="mt-2 small text-warning">
                 <i class="fas fa-trophy me-1"></i> Rekord: {{ ex_stat.max_ever }} kg

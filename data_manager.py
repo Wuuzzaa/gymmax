@@ -235,6 +235,12 @@ class GymDataManager:
         increase_7_abs = round(latest_val - val_7, 1)
         increase_7_pct = round((increase_7_abs / val_7) * 100, 1) if val_7 > 0 else 0.0
 
+        # Trendberechnungen (kg pro Woche)
+        trend_7 = self._calculate_trend_slope(series, exercise, 7)
+        trend_30 = self._calculate_trend_slope(series, exercise, 30)
+        trend_90 = self._calculate_trend_slope(series, exercise, 90)
+        trend_all = self._calculate_trend_slope(series, exercise, None)
+
         # All-time high
         max_val = round(float(series[exercise].max()), 1)
 
@@ -282,6 +288,10 @@ class GymDataManager:
             'increase_30_pct': increase_30_pct,
             'increase_7_abs': increase_7_abs,
             'increase_7_pct': increase_7_pct,
+            'trend_7': trend_7,
+            'trend_30': trend_30,
+            'trend_90': trend_90,
+            'trend_all': trend_all,
             'total_increase_abs': total_increase_abs,
             'total_increase_pct': total_increase_pct,
             'diff': diff,
@@ -294,6 +304,42 @@ class GymDataManager:
             'category': category_map.get(exercise) if category_map else None,
             'history': series.tail(10).to_dict('records') # Added for details view
         }
+
+    @staticmethod
+    def _calculate_trend_slope(series: pd.DataFrame, exercise: str, days: Optional[int]) -> float:
+        """
+        Calculates the trend slope (kg per week) for the given timeframe.
+        """
+        import numpy as np
+        
+        if len(series) < 2:
+            return 0.0
+            
+        data = series.copy()
+        if days:
+            cutoff = data['Datum'].max() - pd.Timedelta(days=days)
+            data = data[data['Datum'] >= cutoff]
+            
+        if len(data) < 2:
+            return 0.0
+            
+        # Time in days from start of interval
+        x = (data['Datum'] - data['Datum'].min()).dt.days.values
+        y = data[exercise].values
+        
+        try:
+            # Simple linear regression
+            # Weighting more recent points slightly more if it's the 'all' trend
+            if days is None and len(x) > 5:
+                weights = np.linspace(1.0, 2.0, len(y))
+                m, _ = np.polyfit(x, y, 1, w=weights)
+            else:
+                m, _ = np.polyfit(x, y, 1)
+                
+            # m is kg per day, return kg per week
+            return round(m * 7, 2)
+        except:
+            return 0.0
 
     @staticmethod
     def _get_exercise_icon(exercise_name: str) -> str:
