@@ -1,6 +1,8 @@
 import json
+import os
 from datetime import datetime
 from flask import Flask, render_template, abort
+from dotenv import load_dotenv
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.utils
@@ -8,6 +10,8 @@ import pandas as pd
 import numpy as np
 
 from data_manager import GymDataManager
+
+load_dotenv()
 
 app = Flask(__name__)
 data_manager = GymDataManager()
@@ -170,10 +174,23 @@ def ai_coach():
     categories, _ = get_template_data(df, category_map, category_order, stats)
     
     coach_data = data_manager.get_ai_coach_data()
+
+    # Load defaults from .env
+    defaults = {
+        'gender': os.getenv('DEFAULT_GENDER', ''),
+        'age': os.getenv('DEFAULT_AGE', ''),
+        'height': os.getenv('DEFAULT_HEIGHT', ''),
+        'weight': os.getenv('DEFAULT_WEIGHT', ''),
+        'goal': os.getenv('DEFAULT_GOAL', ''),
+        'frequency': os.getenv('DEFAULT_FREQUENCY', ''),
+        'experience': os.getenv('DEFAULT_EXPERIENCE', ''),
+        'notes': os.getenv('DEFAULT_NOTES', '')
+    }
     
     return render_template(
         'ai_coach.html',
         categories=categories,
+        defaults=defaults,
         **coach_data
     )
 

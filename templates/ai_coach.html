@@ -26,23 +26,23 @@
             <div class="col-md-3">
                 <label for="gender" class="form-label small">Geschlecht</label>
                 <select id="gender" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="">Nicht angegeben</option>
-                    <option value="männlich">Männlich</option>
-                    <option value="weiblich">Weiblich</option>
-                    <option value="divers">Divers</option>
+                    <option value="" {% if not defaults.gender %}selected{% endif %}>Nicht angegeben</option>
+                    <option value="männlich" {% if defaults.gender == 'männlich' %}selected{% endif %}>Männlich</option>
+                    <option value="weiblich" {% if defaults.gender == 'weiblich' %}selected{% endif %}>Weiblich</option>
+                    <option value="divers" {% if defaults.gender == 'divers' %}selected{% endif %}>Divers</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="age" class="form-label small">Alter</label>
-                <input type="number" id="age" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 30" oninput="updatePrompt()">
+                <input type="number" id="age" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 30" value="{{ defaults.age }}" oninput="updatePrompt()">
             </div>
             <div class="col-md-3">
                 <label for="height" class="form-label small">Größe (cm)</label>
-                <input type="number" id="height" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 180" oninput="updatePrompt()">
+                <input type="number" id="height" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 180" value="{{ defaults.height }}" oninput="updatePrompt()">
             </div>
             <div class="col-md-3">
                 <label for="weight" class="form-label small">Gewicht (kg)</label>
-                <input type="number" id="weight" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" oninput="updatePrompt()">
+                <input type="number" id="weight" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" value="{{ defaults.weight }}" oninput="updatePrompt()">
             </div>
         </div>
 
@@ -51,29 +51,29 @@
             <div class="col-md-4">
                 <label for="goal" class="form-label small">Trainingsziel</label>
                 <select id="goal" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="">Nicht angegeben</option>
-                    <option value="Muskelaufbau (Hypertrophie)">Muskelaufbau</option>
-                    <option value="Kraftsteigerung">Kraftsteigerung</option>
-                    <option value="Fettabbau / Definition">Fettabbau</option>
-                    <option value="Ausdauer & Fitness">Ausdauer & Fitness</option>
+                    <option value="" {% if not defaults.goal %}selected{% endif %}>Nicht angegeben</option>
+                    <option value="Muskelaufbau (Hypertrophie)" {% if defaults.goal == 'Muskelaufbau (Hypertrophie)' %}selected{% endif %}>Muskelaufbau</option>
+                    <option value="Kraftsteigerung" {% if defaults.goal == 'Kraftsteigerung' %}selected{% endif %}>Kraftsteigerung</option>
+                    <option value="Fettabbau / Definition" {% if defaults.goal == 'Fettabbau / Definition' %}selected{% endif %}>Fettabbau</option>
+                    <option value="Ausdauer & Fitness" {% if defaults.goal == 'Ausdauer & Fitness' %}selected{% endif %}>Ausdauer & Fitness</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <label for="frequency" class="form-label small">Trainingshäufigkeit (pro Woche)</label>
-                <input type="number" id="frequency" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 3" oninput="updatePrompt()">
+                <input type="number" id="frequency" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 3" value="{{ defaults.frequency }}" oninput="updatePrompt()">
             </div>
             <div class="col-md-4">
                 <label for="experience" class="form-label small">Trainingserfahrung</label>
                 <select id="experience" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="">Nicht angegeben</option>
-                    <option value="Anfänger">Anfänger</option>
-                    <option value="Fortgeschritten">Fortgeschritten</option>
-                    <option value="Profi">Profi</option>
+                    <option value="" {% if not defaults.experience %}selected{% endif %}>Nicht angegeben</option>
+                    <option value="Anfänger" {% if defaults.experience == 'Anfänger' %}selected{% endif %}>Anfänger</option>
+                    <option value="Fortgeschritten" {% if defaults.experience == 'Fortgeschritten' %}selected{% endif %}>Fortgeschritten</option>
+                    <option value="Profi" {% if defaults.experience == 'Profi' %}selected{% endif %}>Profi</option>
                 </select>
             </div>
             <div class="col-12">
                 <label for="notes" class="form-label small">Zusätzliche Infos (Verletzungen, Ernährung, Fokus)</label>
-                <textarea id="notes" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" placeholder="z.B. Fokus auf Oberkörper, esse im Kaloriendefizit, leichte Knieprobleme" oninput="updatePrompt()"></textarea>
+                <textarea id="notes" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" placeholder="z.B. Fokus auf Oberkörper, esse im Kaloriendefizit, leichte Knieprobleme" oninput="updatePrompt()">{{ defaults.notes }}</textarea>
             </div>
         </div>
     </div>
@@ -126,6 +126,9 @@ Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.
 
 {% block scripts %}
 <script>
+// Initial prompt update on page load
+document.addEventListener('DOMContentLoaded', updatePrompt);
+
 function updatePrompt() {
     const gender = document.getElementById('gender').value;
     const age = document.getElementById('age').value;
