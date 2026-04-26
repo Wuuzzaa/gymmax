@@ -80,5 +80,28 @@ class TestGymDataManager(unittest.TestCase):
         stats_recent = self.data_manager.get_exercise_stats(df_recent, 'Exercise')
         self.assertEqual(stats_recent['measurement_status'], 'ok')
 
+    def test_get_ai_coach_data(self):
+        # Create a dummy Excel file for load_data_with_categories to read (or mock it)
+        # Since load_data_with_categories reads from self.file_path, we can mock df
+        import unittest.mock as mock
+        
+        dates = [datetime(2023, 1, 1), datetime(2023, 1, 10)]
+        data = {
+            'Datum': dates,
+            'Exercise1': [50.0, 55.0]
+        }
+        df = pd.DataFrame(data)
+        category_map = {'Exercise1': 'Upper Body'}
+        category_order = ['Upper Body']
+        
+        with mock.patch.object(GymDataManager, 'load_data_with_categories', return_value=(df, category_map, category_order)):
+            ai_data = self.data_manager.get_ai_coach_data()
+            
+            self.assertIn('exercises', ai_data)
+            self.assertIn('latest_date', ai_data)
+            self.assertEqual(len(ai_data['exercises']), 1)
+            self.assertEqual(ai_data['exercises'][0]['Name'], 'Exercise1')
+            self.assertEqual(ai_data['exercises'][0]['Letztes Training'], '10.01.2023')
+
 if __name__ == '__main__':
     unittest.main()

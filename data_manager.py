@@ -356,3 +356,30 @@ class GymDataManager:
             if any(k in lower_name for k in keywords):
                 return icon
         return "fa-dumbbell"
+
+    def get_ai_coach_data(self) -> Dict[str, Any]:
+        """
+        Aggregates summary data specifically for AI analysis.
+        """
+        df, category_map, _ = self.load_data_with_categories()
+        if df.empty:
+            return {}
+
+        stats = self.get_all_stats(df, category_map)
+        
+        # Focus on progress over different time periods
+        summary = []
+        for s in stats:
+            summary.append({
+                'Name': s['name'],
+                'Kategorie': s['category'],
+                'Aktuelles Gewicht': f"{s['current_max']} kg",
+                'Steigerung (Gesamt)': f"{s['total_increase_abs']} kg ({s['total_increase_pct']}%)",
+                'Steigerung (30 Tage)': f"{s['increase_30_abs']} kg ({s['increase_30_pct']}%)",
+                'Letzte Steigerung': s['last_increase_date'].strftime('%d.%m.%Y') if s['last_increase_date'] else 'Keine'
+            })
+
+        return {
+            'exercises': summary,
+            'latest_date': df['Datum'].max().strftime('%d.%m.%Y') if not df.empty else 'N/A'
+        }

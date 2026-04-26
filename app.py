@@ -160,6 +160,24 @@ def details(name):
     )
 
 
+@app.route('/ai-coach')
+def ai_coach():
+    """
+    View for generating an AI prompt for training analysis.
+    """
+    df, category_map, category_order = data_manager.load_data_with_categories()
+    stats = data_manager.get_all_stats(df, category_map)
+    categories, _ = get_template_data(df, category_map, category_order, stats)
+    
+    coach_data = data_manager.get_ai_coach_data()
+    
+    return render_template(
+        'ai_coach.html',
+        categories=categories,
+        **coach_data
+    )
+
+
 if __name__ == '__main__':
     # Running in debug mode for development
     app.run(debug=True)

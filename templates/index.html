@@ -16,6 +16,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">EGYM Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/ai-coach" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-robot me-1"></i> AI Analyse
+        </a>
         <span class="badge bg-secondary p-2">Stand: {{ latest_date }}</span>
     </div>
 </div>
@@ -185,6 +188,7 @@
                                     </span>
                                 </td>
                                 <td class="text-center" data-sort="{{ item.days_since_increase if item.days_since_increase is not none else 9999 }}">
+                                    <div class="small text-muted">{{ item.last_increase_date.strftime('%d.%m.%Y') if item.last_increase_date else 'N/A' }}</div>
                                     <span class="badge {% if item.days_since_increase is not none and item.days_since_increase <= 7 %}bg-success{% elif item.days_since_increase is not none and item.days_since_increase <= 21 %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
                                         {% if item.days_since_increase is not none %}
                                             vor {{ item.days_since_increase }} Tagen
