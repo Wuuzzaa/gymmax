@@ -124,12 +124,30 @@
                     <table class="table table-hover align-middle mb-0" id="progressTable">
                         <thead class="table-light">
                             <tr>
-                                <th style="cursor: pointer;" onclick="sortTable(0)">Übung <i class="fas fa-sort ms-1 small text-muted"></i></th>
-                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(1)">Aktuell <i class="fas fa-sort ms-1 small text-muted"></i></th>
-                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(2)">Start <i class="fas fa-sort ms-1 small text-muted"></i></th>
-                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(3)">vor 90 Tagen <i class="fas fa-sort ms-1 small text-muted"></i></th>
-                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(4)">vor 30 Tagen <i class="fas fa-sort ms-1 small text-muted"></i></th>
-                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(5)">Letzte Steigerung <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(0, 'default')">Übung <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(1, 'default')">Aktuell <i class="fas fa-sort ms-1 small text-muted"></i></th>
+                                <th class="text-center">
+                                    Start 
+                                    <div class="d-flex justify-content-center mt-1">
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border me-1" onclick="sortTable(2, 'abs')">kg <i class="fas fa-sort"></i></span>
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border" onclick="sortTable(2, 'pct')">% <i class="fas fa-sort"></i></span>
+                                    </div>
+                                </th>
+                                <th class="text-center">
+                                    vor 90 Tagen
+                                    <div class="d-flex justify-content-center mt-1">
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border me-1" onclick="sortTable(3, 'abs')">kg <i class="fas fa-sort"></i></span>
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border" onclick="sortTable(3, 'pct')">% <i class="fas fa-sort"></i></span>
+                                    </div>
+                                </th>
+                                <th class="text-center">
+                                    vor 30 Tagen
+                                    <div class="d-flex justify-content-center mt-1">
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border me-1" onclick="sortTable(4, 'abs')">kg <i class="fas fa-sort"></i></span>
+                                        <span style="cursor: pointer; font-size: 0.7rem;" class="badge bg-light text-dark border" onclick="sortTable(4, 'pct')">% <i class="fas fa-sort"></i></span>
+                                    </div>
+                                </th>
+                                <th style="cursor: pointer;" class="text-center" onclick="sortTable(5, 'default')">Letzte Steigerung <i class="fas fa-sort ms-1 small text-muted"></i></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -142,19 +160,19 @@
                                 <td class="text-center fw-bold" data-sort="{{ item.current_max }}">
                                     {{ item.current_max }} kg
                                 </td>
-                                <td class="text-center" data-sort="{{ item.total_increase_abs }}">
+                                <td class="text-center" data-sort-abs="{{ item.total_increase_abs }}" data-sort-pct="{{ item.total_increase_pct }}">
                                     <div class="small text-muted">{{ item.first_max }} kg</div>
                                     <span class="text-success small fw-bold">
                                         +{{ item.total_increase_abs }} kg ({{ item.total_increase_pct }}%)
                                     </span>
                                 </td>
-                                <td class="text-center" data-sort="{{ item.quarter_increase_abs }}">
+                                <td class="text-center" data-sort-abs="{{ item.quarter_increase_abs }}" data-sort-pct="{{ item.quarter_increase_pct }}">
                                     <div class="small text-muted">{{ item.quarter_max }} kg</div>
                                     <span class="{% if item.quarter_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
                                         +{{ item.quarter_increase_abs }} kg ({{ item.quarter_increase_pct }}%)
                                     </span>
                                 </td>
-                                <td class="text-center" data-sort="{{ item.month_increase_abs }}">
+                                <td class="text-center" data-sort-abs="{{ item.month_increase_abs }}" data-sort-pct="{{ item.month_increase_pct }}">
                                     <div class="small text-muted">{{ item.month_max }} kg</div>
                                     <span class="{% if item.month_increase_abs > 0 %}text-success{% else %}text-muted{% endif %} small fw-bold">
                                         +{{ item.month_increase_abs }} kg ({{ item.month_increase_pct }}%)
@@ -232,46 +250,72 @@
 <script>
     let sortOrder = {};
 
-    function sortTable(n) {
+    function sortTable(n, type = 'default') {
         const table = document.getElementById("progressTable");
         const tbody = table.tBodies[0];
         const rows = Array.from(tbody.rows);
         const headers = table.tHead.rows[0].cells;
         
-        // Reset icons
-        for (let i = 0; i < headers.length; i++) {
-            const icon = headers[i].querySelector('i');
-            if (icon) {
-                icon.className = 'fas fa-sort ms-1 small text-muted';
-            }
-        }
+        // Identifier for the sort order state
+        const stateKey = n + (type !== 'default' ? '-' + type : '');
+
+        // Reset all icons in headers
+        const allIcons = table.tHead.querySelectorAll('i.fas');
+        allIcons.forEach(icon => {
+            icon.className = 'fas fa-sort ms-1 small text-muted';
+        });
 
         // Toggle sort order
-        if (!sortOrder[n] || sortOrder[n] === 'desc') {
-            sortOrder[n] = 'asc';
+        if (!sortOrder[stateKey] || sortOrder[stateKey] === 'desc') {
+            sortOrder[stateKey] = 'asc';
         } else {
-            sortOrder[n] = 'desc';
+            sortOrder[stateKey] = 'desc';
         }
 
         // Update current icon
-        const currentIcon = headers[n].querySelector('i');
+        // If it's a sub-sort (abs/pct), find the icon inside the clicked badge
+        // If it's a main sort (n=0, 1, 5), find the icon directly in the header cell
+        let currentIcon;
+        if (type === 'default') {
+            currentIcon = headers[n].querySelector('i');
+        } else {
+            // Find the badge that was clicked based on the type
+            const badges = headers[n].querySelectorAll('.badge');
+            badges.forEach(badge => {
+                if ((type === 'abs' && badge.innerText.includes('kg')) || 
+                    (type === 'pct' && badge.innerText.includes('%'))) {
+                    currentIcon = badge.querySelector('i');
+                }
+            });
+        }
+
         if (currentIcon) {
-            currentIcon.className = `fas fa-sort-${sortOrder[n] === 'asc' ? 'up' : 'down'} ms-1 small text-primary`;
+            currentIcon.className = `fas fa-sort-${sortOrder[stateKey] === 'asc' ? 'up' : 'down'} ms-1 small text-primary`;
         }
 
         const sortedRows = rows.sort((a, b) => {
-            let x = a.cells[n].getAttribute('data-sort');
-            let y = b.cells[n].getAttribute('data-sort');
+            let x, y;
+            
+            if (type === 'abs') {
+                x = a.cells[n].getAttribute('data-sort-abs');
+                y = b.cells[n].getAttribute('data-sort-abs');
+            } else if (type === 'pct') {
+                x = a.cells[n].getAttribute('data-sort-pct');
+                y = b.cells[n].getAttribute('data-sort-pct');
+            } else {
+                x = a.cells[n].getAttribute('data-sort');
+                y = b.cells[n].getAttribute('data-sort');
+            }
             
             // Try numeric comparison if both look like numbers
             if (!isNaN(parseFloat(x)) && !isNaN(parseFloat(y))) {
-                return sortOrder[n] === 'asc' ? parseFloat(x) - parseFloat(y) : parseFloat(y) - parseFloat(x);
+                return sortOrder[stateKey] === 'asc' ? parseFloat(x) - parseFloat(y) : parseFloat(y) - parseFloat(x);
             }
             
             // String comparison
-            x = x.toLowerCase();
-            y = y.toLowerCase();
-            if (sortOrder[n] === 'asc') {
+            x = (x || "").toLowerCase();
+            y = (y || "").toLowerCase();
+            if (sortOrder[stateKey] === 'asc') {
                 return x.localeCompare(y);
             } else {
                 return y.localeCompare(x);
