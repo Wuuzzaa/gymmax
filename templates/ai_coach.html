@@ -1,253 +1,239 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
 
 {% block sidebar %}
     {% for cat in categories %}
-        <div class="sidebar-heading text-muted mt-3 mb-1 ps-3" style="font-size: 0.75rem;">{{ cat.name }}</div>
-        {% for exercise in cat.exercises %}
-            <a href="{{ url_for('details', name=exercise) }}" class="sidebar-link py-1" style="font-size: 0.9rem;">
-                {{ exercise }}
-            </a>
-        {% endfor %}
+    <div class="sidebar-heading text-muted mb-2 ps-3" style="font-size: 0.8rem; text-transform: uppercase;">{{ cat.name }}</div>
+    {% for ex in cat.exercises %}
+    <a href="/exercise/{{ ex }}" class="sidebar-link">
+        <i class="fas fa-chart-line me-2"></i> {{ ex }}
+    </a>
+    {% endfor %}
+    <hr class="my-2">
     {% endfor %}
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-robot text-primary me-2"></i>AI Fitness Coach Prompt</h1>
-    <button class="btn btn-outline-primary" onclick="copyPrompt()">
-        <i class="fas fa-copy me-2"></i>Prompt kopieren
-    </button>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">AI Coach Analysis</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-secondary p-2">Stand: {{ latest_date }}</span>
+    </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Persönliche Daten (optional)</h5>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label for="gender" class="form-label small">Geschlecht</label>
-                <select id="gender" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="" {% if not defaults.gender %}selected{% endif %}>Nicht angegeben</option>
-                    <option value="männlich" {% if defaults.gender == 'männlich' %}selected{% endif %}>Männlich</option>
-                    <option value="weiblich" {% if defaults.gender == 'weiblich' %}selected{% endif %}>Weiblich</option>
-                    <option value="divers" {% if defaults.gender == 'divers' %}selected{% endif %}>Divers</option>
-                </select>
+<div class="row">
+    <!-- Configuration Form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-user-cog me-2 text-primary"></i>Profile & Goals</h5>
             </div>
-            <div class="col-md-3">
-                <label for="age" class="form-label small">Alter</label>
-                <input type="number" id="age" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 30" value="{{ defaults.age }}" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-3">
-                <label for="height" class="form-label small">Größe (cm)</label>
-                <input type="number" id="height" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 180" value="{{ defaults.height }}" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-3">
-                <label for="weight" class="form-label small">Gewicht (kg)</label>
-                <input type="number" id="weight" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" value="{{ defaults.weight }}" oninput="updatePrompt()">
+            <div class="card-body">
+                <form id="coachForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Training Goal</label>
+                        <select class="form-select form-select-sm" id="goal" onchange="updateEgymDefaults()">
+                            {% for goal_name in egym_programs.keys() %}
+                            <option value="{{ goal_name }}" {% if defaults.goal == goal_name %}selected{% endif %}>{{ goal_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Gender</label>
+                            <input type="text" class="form-control form-control-sm" id="gender" value="{{ defaults.gender }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Age</label>
+                            <input type="number" class="form-control form-control-sm" id="age" value="{{ defaults.age }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Height (cm)</label>
+                            <input type="number" class="form-control form-control-sm" id="height" value="{{ defaults.height }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Weight (kg)</label>
+                            <input type="number" class="form-control form-control-sm" id="weight" value="{{ defaults.weight }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Frequency (sessions/week)</label>
+                        <input type="text" class="form-control form-control-sm" id="frequency" value="{{ defaults.frequency }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Experience</label>
+                        <input type="text" class="form-control form-control-sm" id="experience" value="{{ defaults.experience }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Additional Notes</label>
+                        <textarea class="form-control form-control-sm" id="notes" rows="2">{{ defaults.notes }}</textarea>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="fun_mode" {% if defaults.fun_mode %}checked{% endif %}>
+                        <label class="form-check-input-label small fw-bold" for="fun_mode">Fun Mode (Humorous Analysis)</label>
+                    </div>
+
+                    <hr>
+                    <h6 class="small fw-bold text-uppercase text-muted mb-3">EGYM Settings</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">Sets</label>
+                            <input type="number" class="form-control form-control-sm" id="sets" value="{{ defaults.sets }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">Reps</label>
+                            <input type="number" class="form-control form-control-sm" id="reps" value="{{ defaults.reps }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">Int. %</label>
+                            <input type="number" class="form-control form-control-sm" id="intensity" value="{{ defaults.max_strength }}">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100" onclick="generatePrompt()">
+                        <i class="fas fa-magic me-2"></i>Generate AI Prompt
+                    </button>
+                </form>
             </div>
         </div>
+    </div>
 
-        <h5 class="card-title mb-3 mt-4">Trainingskontext & EGYM (optional)</h5>
-        <div class="row g-3">
-            <div class="col-md-12 mb-2">
-                <label for="excel-url" class="form-label small">Online Excel URL (für KI Analyse)</label>
-                <input type="text" id="excel-url" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="https://..." value="{{ defaults.excel_url }}" oninput="updatePrompt()">
+    <!-- Generated Prompt Area -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-terminal me-2 text-primary"></i>AI Prompt</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyPrompt()">
+                    <i class="fas fa-copy me-1"></i> Copy
+                </button>
             </div>
-            <div class="col-md-4">
-                <label for="goal" class="form-label small">Trainingsziel</label>
-                <select id="goal" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="" {% if not defaults.goal %}selected{% endif %}>Nicht angegeben</option>
-                    <option value="Muskelaufbau (Hypertrophie)" {% if defaults.goal == 'Muskelaufbau (Hypertrophie)' %}selected{% endif %}>Muskelaufbau</option>
-                    <option value="Kraftsteigerung" {% if defaults.goal == 'Kraftsteigerung' %}selected{% endif %}>Kraftsteigerung</option>
-                    <option value="Fettabbau / Definition" {% if defaults.goal == 'Fettabbau / Definition' %}selected{% endif %}>Fettabbau</option>
-                    <option value="Ausdauer & Fitness" {% if defaults.goal == 'Ausdauer & Fitness' %}selected{% endif %}>Ausdauer & Fitness</option>
-                </select>
+            <div class="card-body">
+                <textarea id="promptOutput" class="form-control bg-dark text-light font-monospace small h-100" style="min-height: 500px;" readonly></textarea>
             </div>
-            <div class="col-md-4">
-                <label for="egym-method" class="form-label small">EGYM Trainingsmethode</label>
-                <select id="egym-method" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="">Nicht angegeben</option>
-                    <option value="Regulär">Regulär</option>
-                    <option value="Negativ">Negativ</option>
-                    <option value="Adaptiv">Adaptiv</option>
-                    <option value="Isokinetisch">Isokinetisch</option>
-                    <option value="Explonitiv">Explonitiv</option>
-                </select>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-database me-2 text-primary"></i>Data sent to AI</h5>
             </div>
-            <div class="col-md-2">
-                <label for="sets" class="form-label small">Sätze</label>
-                <input type="number" id="sets" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 2" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-2">
-                <label for="reps" class="form-label small">Wdh.</label>
-                <input type="number" id="reps" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 12" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-4">
-                <label for="max-strength" class="form-label small">Maximal-Kraft (%)</label>
-                <input type="number" id="max-strength" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-4">
-                <label for="frequency" class="form-label small">Trainingshäufigkeit (pro Woche)</label>
-                <input type="number" id="frequency" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 3" value="{{ defaults.frequency }}" oninput="updatePrompt()">
-            </div>
-            <div class="col-md-4">
-                <label for="experience" class="form-label small">Trainingserfahrung</label>
-                <select id="experience" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
-                    <option value="" {% if not defaults.experience %}selected{% endif %}>Nicht angegeben</option>
-                    <option value="Anfänger" {% if defaults.experience == 'Anfänger' %}selected{% endif %}>Anfänger</option>
-                    <option value="Fortgeschritten" {% if defaults.experience == 'Fortgeschritten' %}selected{% endif %}>Fortgeschritten</option>
-                    <option value="Profi" {% if defaults.experience == 'Profi' %}selected{% endif %}>Profi</option>
-                </select>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="form-check form-switch mb-1">
-                    <input class="form-check-input" type="checkbox" id="funmode" {% if defaults.fun_mode %}checked{% endif %} onchange="updatePrompt()">
-                    <label class="form-check-label small" for="funmode">Markus Rühl Funmode 🥩</label>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Exercise</th>
+                                <th>Category</th>
+                                <th class="text-center">Current</th>
+                                <th class="text-center">Total Increase</th>
+                                <th class="text-center">30d Increase</th>
+                                <th class="text-center">Last Increase</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ex in exercises %}
+                            <tr>
+                                <td><strong>{{ ex.Name }}</strong></td>
+                                <td><span class="badge bg-light text-dark border">{{ ex.Kategorie }}</span></td>
+                                <td class="text-center">{{ ex['Aktuelles Gewicht'] }}</td>
+                                <td class="text-center text-success fw-bold">{{ ex['Steigerung (Gesamt)'] }}</td>
+                                <td class="text-center">{{ ex['Steigerung (30 Tage)'] }}</td>
+                                <td class="text-center small text-muted">{{ ex['Letzte Steigerung'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="col-12">
-                <label for="notes" class="form-label small">Zusätzliche Infos (Verletzungen, Ernährung, Fokus)</label>
-                <textarea id="notes" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2" placeholder="z.B. Fokus auf Oberkörper, esse im Kaloriendefizit, leichte Knieprobleme" oninput="updatePrompt()">{{ defaults.notes }}</textarea>
-            </div>
         </div>
     </div>
 </div>
-
-<div class="card bg-black border-primary">
-    <div class="card-body">
-        <pre id="ai-prompt" style="white-space: pre-wrap; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;"><span id="prompt-content">Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
-
-Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).</span>
-
-<span id="user-context"></span>
-Hier sind meine aktuellen Statistiken:
-{% for ex in exercises %}
-- {{ ex.Name }} ({{ ex.Kategorie }}):
-  * Aktuelles Gewicht: {{ ex['Aktuelles Gewicht'] }}
-  * Gesamtsteigerung: {{ ex['Steigerung (Gesamt)'] }}
-  * Steigerung letzte 30 Tage: {{ ex['Steigerung (30 Tage)'] }}
-  * Letzte Steigerung: {{ ex['Letzte Steigerung'] }}
-{% endfor %}
-
-<span id="prompt-instructions">Bitte strukturiere deine Antwort wie folgt:
-
-1. **Status-Quo Analyse**: Eine Zusammenfassung meines aktuellen Stands. Wie ist die Balance zwischen den Muskelgruppen?
-2. **Top-Performances**: Bei welchen Übungen mache ich die besten Fortschritte? Analysiere die Gründe (z.B. Übungsreihenfolge, Hebelverhältnisse).
-3. **Plateau- & Ursachenanalyse (Fokus)**: Identifiziere Übungen mit stagnierendem Fortschritt. Führe eine tiefgehende Analyse durch:
-    * **Trainingsvariablen**: Anpassung von Volumen (Sätze/Wdh), Intensität oder Pausenzeiten.
-    * **Biomechanik & Technik**: Spezifische Tipps für den Bewegungsablauf bei diesen Übungen.
-    * **Neurologische Faktoren**: Tipps zur Mind-Muscle-Connection.
-    * **Schwachstellen-Training**: Empfiehl konkrete Assistenzübungen für die Hilfsmuskulatur.
-4. **Strategische Empfehlungen**: Konkrete Schritte für die nächsten 4 Wochen (z.B. Deload-Woche, Fokus-Wechsel).
-5. **Lifestyle-Faktoren**: Spezifische Tipps zu Ernährung (Protein, Kalorien) und Regeneration, die zu meinem Fortschritt und Ziel passen.
-
-Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.</span></pre>
-    </div>
-</div>
-
-<div id="copy-toast" class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true">
-  <div class="d-flex">
-    <div class="toast-body">
-      Prompt in die Zwischenablage kopiert!
-    </div>
-    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-  </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Initial prompt update on page load
-document.addEventListener('DOMContentLoaded', updatePrompt);
+    const egymPrograms = {{ egym_programs | tojson }};
+    const exerciseData = {{ exercises | tojson }};
 
-function updatePrompt() {
-    const gender = document.getElementById('gender').value;
-    const age = document.getElementById('age').value;
-    const height = document.getElementById('height').value;
-    const weight = document.getElementById('weight').value;
-    const goal = document.getElementById('goal').value;
-    const frequency = document.getElementById('frequency').value;
-    const experience = document.getElementById('experience').value;
-    const notes = document.getElementById('notes').value;
-    const funmode = document.getElementById('funmode').checked;
-    
-    // EGYM specific
-    const excelUrl = document.getElementById('excel-url').value;
-    const egymMethod = document.getElementById('egym-method').value;
-    const sets = document.getElementById('sets').value;
-    const reps = document.getElementById('reps').value;
-    const maxStrength = document.getElementById('max-strength').value;
-    
-    // Update Role & Intro
-    const promptContent = document.getElementById('prompt-content');
-    const promptInstructions = document.getElementById('prompt-instructions');
-    
-    if (funmode) {
-        promptContent.innerText = `Du bist Markus Rühl, die deutsche Bodybuilding-Legende. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
-
-Deine Analyse soll direkt, hart, humorvoll und im typischen Rühl-Stil sein. Keine wissenschaftliche Weichei-Sprache, sondern Fokus auf schwere Gewichte und "Mass mast". Benutze Begriffe wie "Stabile Form", "Viel hilft viel", "Muss ned schmecke, muss wirke" und "Schwer und falsch ist besser als leicht und richtig".`;
-
-        promptInstructions.innerText = `Bitte strukturiere deine Antwort wie folgt:
-
-1. **Rühl-Check**: Ein kurzes, hartes Urteil zu meinem Stand. Bin ich eine "Maschine" oder noch ein "Lauch"?
-2. **Stabile Übungen**: Wo bewege ich ordentlich Eisen? Lob mich im Rühl-Stil.
-3. **Lauch-Alarm (Plateaus)**: Wo stagniere ich? Sag mir klipp und klar, warum das so ist (wahrscheinlich zu wenig Gewicht oder zu wenig Essen). Gib Tipps im "Schwer und Falsch"-Modus.
-4. **Rühls Schlachtplan**: Was soll ich die nächsten 4 Wochen machen? Fokus auf Fleisch, schwere Sätze und Disziplin.
-5. **Ernährung & Lifestyle**: Erklär mir, warum Reis und Huhn (oder ein ordentlicher Shake) wichtiger sind als Avocado-Toast. 
-
-Antworte auf Deutsch im authentischen Markus Rühl Dialekt/Jargon.`;
-    } else {
-        promptContent.innerText = `Du bist ein erfahrener Fitnessprofi, Personal Trainer und Sportwissenschaftler. Analysiere meine Trainingsfortschritte basierend auf den bereitgestellten E-Gym Daten (Stand: {{ latest_date }}) und meinem persönlichen Kontext.
-
-Deine Analyse soll evidenzbasiert, präzise und motivierend sein. Berücksichtige dabei die Prinzipien der Trainingslehre (Hypertrophie, Kraftausdauer, neuronale Adaptation).`;
-
-        promptInstructions.innerText = `Bitte strukturiere deine Antwort wie folgt:
-
-1. **Status-Quo Analyse**: Eine Zusammenfassung meines aktuellen Stands. Wie ist die Balance zwischen den Muskelgruppen?
-2. **Top-Performances**: Bei welchen Übungen mache ich die besten Fortschritte? Analysiere die Gründe (z.B. Übungsreihenfolge, Hebelverhältnisse).
-3. **Plateau- & Ursachenanalyse (Fokus)**: Identifiziere Übungen mit stagnierendem Fortschritt. Führe eine tiefgehende Analyse durch:
-    * **Trainingsvariablen**: Anpassung von Volumen (Sätze/Wdh), Intensität oder Pausenzeiten.
-    * **Biomechanik & Technik**: Spezifische Tipps für den Bewegungsablauf bei diesen Übungen.
-    * **Neurologische Faktoren**: Tipps zur Mind-Muscle-Connection.
-    * **Schwachstellen-Training**: Empfiehl konkrete Assistenzübungen für die Hilfsmuskulatur.
-4. **Strategische Empfehlungen**: Konkrete Schritte für die nächsten 4 Wochen (z.B. Deload-Woche, Fokus-Wechsel).
-5. **Lifestyle-Faktoren**: Spezifische Tipps zu Ernährung (Protein, Kalorien) und Regeneration, die zu meinem Fortschritt und Ziel passen.
-
-Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.`;
+    function updateEgymDefaults() {
+        const selectedGoal = document.getElementById('goal').value;
+        const program = egymPrograms[selectedGoal];
+        if (program) {
+            document.getElementById('sets').value = program.sets;
+            document.getElementById('reps').value = program.reps;
+            document.getElementById('intensity').value = program.intensity;
+        }
     }
 
-    let context = "";
-    if (gender || age || height || weight || goal || frequency || experience || notes || egymMethod || sets || reps || maxStrength || excelUrl) {
-        context = "\nMeine Daten & Kontext:\n";
-        if (excelUrl) context += `- Online Excel Daten: ${excelUrl}\n`;
-        if (gender) context += `- Geschlecht: ${gender}\n`;
-        if (age) context += `- Alter: ${age} Jahre\n`;
-        if (height) context += `- Größe: ${height} cm\n`;
-        if (weight) context += `- Gewicht: ${weight} kg\n`;
-        if (goal) context += `- Trainingsziel: ${goal}\n`;
-        if (egymMethod) context += `- EGYM Methode: ${egymMethod}\n`;
-        if (sets) context += `- Sätze: ${sets}\n`;
-        if (reps) context += `- Wiederholungen: ${reps}\n`;
-        if (maxStrength) context += `- Maximalkraft-Einstellung: ${maxStrength}%\n`;
-        if (frequency) context += `- Häufigkeit: ${frequency}x pro Woche\n`;
-        if (experience) context += `- Erfahrung: ${experience}\n`;
-        if (notes) context += `- Zusätzliche Anmerkungen: ${notes}\n`;
-        context += "\n";
-    }
-    
-    document.getElementById('user-context').innerText = context;
-}
+    function generatePrompt() {
+        const gender = document.getElementById('gender').value;
+        const age = document.getElementById('age').value;
+        const height = document.getElementById('height').value;
+        const weight = document.getElementById('weight').value;
+        const goal = document.getElementById('goal').value;
+        const frequency = document.getElementById('frequency').value;
+        const experience = document.getElementById('experience').value;
+        const notes = document.getElementById('notes').value;
+        const funMode = document.getElementById('fun_mode').checked;
+        
+        const sets = document.getElementById('sets').value;
+        const reps = document.getElementById('reps').value;
+        const intensity = document.getElementById('intensity').value;
 
-function copyPrompt() {
-    const promptText = document.getElementById('ai-prompt').innerText;
-    navigator.clipboard.writeText(promptText).then(() => {
-        const toastElement = document.getElementById('copy-toast');
-        const toast = new bootstrap.Toast(toastElement);
-        toast.show();
-    }).catch(err => {
-        console.error('Fehler beim Kopieren: ', err);
-        alert('Fehler beim Kopieren in die Zwischenablage.');
-    });
-}
+        let prompt = `Act as an expert fitness coach. Analyze my training progress based on the EGYM data provided below.
+
+### User Profile
+- Gender: ${gender || 'Not specified'}
+- Age: ${age || 'Not specified'} years
+- Height: ${height || 'Not specified'} cm
+- Weight: ${weight || 'Not specified'} kg
+- Goal: ${goal}
+- Training Frequency: ${frequency || 'Not specified'}
+- Experience: ${experience || 'Not specified'}
+${notes ? `- Additional Notes: ${notes}` : ''}
+
+### EGYM Training Configuration
+- Training Method: EGYM ${goal}
+- Sets: ${sets}
+- Reps: ${reps}
+- Targeted Intensity: ${intensity}% of maximum strength
+
+### Progress Data (Strength Measurements)
+${JSON.stringify(exerciseData, null, 2)}
+
+### Your Task
+1. Analyze the strength increases across different muscle groups.
+2. Identify exercises where progress is stagnating or exceptional.
+3. Provide specific advice on how to adjust my training (e.g., focus on specific muscle groups, adjust intensity).
+4. Predict future progress if I maintain this pace.
+${funMode ? "5. Maintain a humorous, motivating, and slightly sassy 'drill sergeant' tone." : "5. Maintain a professional, scientific, and motivating tone."}
+
+Please provide the response in Markdown format.`;
+
+        document.getElementById('promptOutput').value = prompt;
+    }
+
+    function copyPrompt() {
+        const copyText = document.getElementById('promptOutput');
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+        btn.classList.replace('btn-outline-secondary', 'btn-success');
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.replace('btn-success', 'btn-outline-secondary');
+        }, 2000);
+    }
+
+    // Initialize prompt on load
+    window.onload = generatePrompt;
 </script>
 {% endblock %}

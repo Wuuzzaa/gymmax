@@ -186,13 +186,57 @@ def ai_coach():
         'experience': os.getenv('DEFAULT_EXPERIENCE', ''),
         'notes': os.getenv('DEFAULT_NOTES', ''),
         'fun_mode': os.getenv('DEFAULT_FUN_MODE', 'false').lower() == 'true',
-        'excel_url': os.getenv('EXCEL_FILE_URL', '')
+        'excel_url': os.getenv('EXCEL_FILE_URL', ''),
+        'egym_method': os.getenv('DEFAULT_EGYM_METHOD', ''),
+        'sets': coach_data.get('egym_defaults', {}).get('sets', ''),
+        'reps': coach_data.get('egym_defaults', {}).get('reps', ''),
+        'max_strength': int(float(coach_data.get('egym_defaults', {}).get('intensity_pct', 0.8)) * 100)
     }
     
+    # Load all EGYM defaults for frontend dynamic switching
+    egym_programs = {
+        'Muskelaufbau (Hypertrophie)': {
+            'sets': os.getenv('EGYM_MUSCLE_BUILDING_SETS', '3'),
+            'reps': os.getenv('EGYM_MUSCLE_BUILDING_REPS', '10'),
+            'intensity': int(float(os.getenv('EGYM_MUSCLE_BUILDING_INTENSITY', '0.75')) * 100)
+        },
+        'Abnehmen (Weight Loss)': {
+            'sets': os.getenv('EGYM_WEIGHT_LOSS_SETS', '3'),
+            'reps': os.getenv('EGYM_WEIGHT_LOSS_REPS', '15'),
+            'intensity': int(float(os.getenv('EGYM_WEIGHT_LOSS_INTENSITY', '0.65')) * 100)
+        },
+        'Kraftausdauer (Metabolic Fit)': {
+            'sets': os.getenv('EGYM_METABOLIC_FIT_SETS', '2'),
+            'reps': os.getenv('EGYM_METABOLIC_FIT_REPS', '20'),
+            'intensity': int(float(os.getenv('EGYM_METABOLIC_FIT_INTENSITY', '0.50')) * 100)
+        },
+        'Athletik (Athletic)': {
+            'sets': os.getenv('EGYM_ATHLETIC_SETS', '3'),
+            'reps': os.getenv('EGYM_ATHLETIC_REPS', '8'),
+            'intensity': int(float(os.getenv('EGYM_ATHLETIC_INTENSITY', '0.60')) * 100)
+        },
+        'Figurtraining (Body Toning)': {
+            'sets': os.getenv('EGYM_BODY_TONING_SETS', '3'),
+            'reps': os.getenv('EGYM_BODY_TONING_REPS', '12'),
+            'intensity': int(float(os.getenv('EGYM_BODY_TONING_INTENSITY', '0.70')) * 100)
+        },
+        'Allgemeine Fitness (General Fitness)': {
+            'sets': os.getenv('EGYM_GENERAL_FITNESS_SETS', '3'),
+            'reps': os.getenv('EGYM_GENERAL_FITNESS_REPS', '15'),
+            'intensity': int(float(os.getenv('EGYM_GENERAL_FITNESS_INTENSITY', '0.60')) * 100)
+        },
+        'Rehabilitation (Rehab Fit)': {
+            'sets': os.getenv('EGYM_REHAB_FIT_SETS', '2'),
+            'reps': os.getenv('EGYM_REHAB_FIT_REPS', '15'),
+            'intensity': int(float(os.getenv('EGYM_REHAB_FIT_INTENSITY', '0.40')) * 100)
+        }
+    }
+
     return render_template(
         'ai_coach.html',
         categories=categories,
         defaults=defaults,
+        egym_programs=egym_programs,
         **coach_data
     )
 

@@ -361,6 +361,7 @@ class GymDataManager:
         """
         Aggregates summary data specifically for AI analysis.
         """
+        import os
         df, category_map, _ = self.load_data_with_categories()
         if df.empty:
             return {}
@@ -379,7 +380,31 @@ class GymDataManager:
                 'Letzte Steigerung': s['last_increase_date'].strftime('%d.%m.%Y') if s['last_increase_date'] else 'Keine'
             })
 
+        # Load EGYM Default values from environment
+        egym_defaults = {}
+        goal = os.getenv('DEFAULT_GOAL', 'Muskelaufbau (Hypertrophie)')
+        
+        # Mapping goal strings to env variable prefixes
+        goal_mapping = {
+            'Muskelaufbau (Hypertrophie)': 'EGYM_MUSCLE_BUILDING',
+            'Abnehmen (Weight Loss)': 'EGYM_WEIGHT_LOSS',
+            'Kraftausdauer (Metabolic Fit)': 'EGYM_METABOLIC_FIT',
+            'Athletik (Athletic)': 'EGYM_ATHLETIC',
+            'Figurtraining (Body Toning)': 'EGYM_BODY_TONING',
+            'Allgemeine Fitness (General Fitness)': 'EGYM_GENERAL_FITNESS',
+            'Rehabilitation (Rehab Fit)': 'EGYM_REHAB_FIT'
+        }
+        
+        prefix = goal_mapping.get(goal, 'EGYM_MUSCLE_BUILDING')
+        egym_defaults = {
+            'goal': goal,
+            'sets': os.getenv(f'{prefix}_SETS', '3'),
+            'reps': os.getenv(f'{prefix}_REPS', '10'),
+            'intensity_pct': os.getenv(f'{prefix}_INTENSITY', '0.75')
+        }
+
         return {
             'exercises': summary,
-            'latest_date': df['Datum'].max().strftime('%d.%m.%Y') if not df.empty else 'N/A'
+            'latest_date': df['Datum'].max().strftime('%d.%m.%Y') if not df.empty else 'N/A',
+            'egym_defaults': egym_defaults
         }
