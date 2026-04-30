@@ -185,7 +185,8 @@ def ai_coach():
         'frequency': os.getenv('DEFAULT_FREQUENCY', ''),
         'experience': os.getenv('DEFAULT_EXPERIENCE', ''),
         'notes': os.getenv('DEFAULT_NOTES', ''),
-        'fun_mode': os.getenv('DEFAULT_FUN_MODE', 'false').lower() == 'true'
+        'fun_mode': os.getenv('DEFAULT_FUN_MODE', 'false').lower() == 'true',
+        'excel_url': os.getenv('EXCEL_FILE_URL', '')
     }
     
     return render_template(

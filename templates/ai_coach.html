@@ -46,8 +46,12 @@
             </div>
         </div>
 
-        <h5 class="card-title mb-3 mt-4">Trainingskontext (optional)</h5>
+        <h5 class="card-title mb-3 mt-4">Trainingskontext & EGYM (optional)</h5>
         <div class="row g-3">
+            <div class="col-md-12 mb-2">
+                <label for="excel-url" class="form-label small">Online Excel URL (für KI Analyse)</label>
+                <input type="text" id="excel-url" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="https://..." value="{{ defaults.excel_url }}" oninput="updatePrompt()">
+            </div>
             <div class="col-md-4">
                 <label for="goal" class="form-label small">Trainingsziel</label>
                 <select id="goal" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
@@ -57,6 +61,29 @@
                     <option value="Fettabbau / Definition" {% if defaults.goal == 'Fettabbau / Definition' %}selected{% endif %}>Fettabbau</option>
                     <option value="Ausdauer & Fitness" {% if defaults.goal == 'Ausdauer & Fitness' %}selected{% endif %}>Ausdauer & Fitness</option>
                 </select>
+            </div>
+            <div class="col-md-4">
+                <label for="egym-method" class="form-label small">EGYM Trainingsmethode</label>
+                <select id="egym-method" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="updatePrompt()">
+                    <option value="">Nicht angegeben</option>
+                    <option value="Regulär">Regulär</option>
+                    <option value="Negativ">Negativ</option>
+                    <option value="Adaptiv">Adaptiv</option>
+                    <option value="Isokinetisch">Isokinetisch</option>
+                    <option value="Explonitiv">Explonitiv</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sets" class="form-label small">Sätze</label>
+                <input type="number" id="sets" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 2" oninput="updatePrompt()">
+            </div>
+            <div class="col-md-2">
+                <label for="reps" class="form-label small">Wdh.</label>
+                <input type="number" id="reps" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 12" oninput="updatePrompt()">
+            </div>
+            <div class="col-md-4">
+                <label for="max-strength" class="form-label small">Maximal-Kraft (%)</label>
+                <input type="number" id="max-strength" class="form-control form-select-sm bg-dark text-white border-secondary" placeholder="z.B. 80" oninput="updatePrompt()">
             </div>
             <div class="col-md-4">
                 <label for="frequency" class="form-label small">Trainingshäufigkeit (pro Woche)</label>
@@ -144,6 +171,13 @@ function updatePrompt() {
     const notes = document.getElementById('notes').value;
     const funmode = document.getElementById('funmode').checked;
     
+    // EGYM specific
+    const excelUrl = document.getElementById('excel-url').value;
+    const egymMethod = document.getElementById('egym-method').value;
+    const sets = document.getElementById('sets').value;
+    const reps = document.getElementById('reps').value;
+    const maxStrength = document.getElementById('max-strength').value;
+    
     // Update Role & Intro
     const promptContent = document.getElementById('prompt-content');
     const promptInstructions = document.getElementById('prompt-instructions');
@@ -183,13 +217,18 @@ Antworte auf Deutsch. Benutze eine professionelle, aber zugängliche Sprache.`;
     }
 
     let context = "";
-    if (gender || age || height || weight || goal || frequency || experience || notes) {
+    if (gender || age || height || weight || goal || frequency || experience || notes || egymMethod || sets || reps || maxStrength || excelUrl) {
         context = "\nMeine Daten & Kontext:\n";
+        if (excelUrl) context += `- Online Excel Daten: ${excelUrl}\n`;
         if (gender) context += `- Geschlecht: ${gender}\n`;
         if (age) context += `- Alter: ${age} Jahre\n`;
         if (height) context += `- Größe: ${height} cm\n`;
         if (weight) context += `- Gewicht: ${weight} kg\n`;
         if (goal) context += `- Trainingsziel: ${goal}\n`;
+        if (egymMethod) context += `- EGYM Methode: ${egymMethod}\n`;
+        if (sets) context += `- Sätze: ${sets}\n`;
+        if (reps) context += `- Wiederholungen: ${reps}\n`;
+        if (maxStrength) context += `- Maximalkraft-Einstellung: ${maxStrength}%\n`;
         if (frequency) context += `- Häufigkeit: ${frequency}x pro Woche\n`;
         if (experience) context += `- Erfahrung: ${experience}\n`;
         if (notes) context += `- Zusätzliche Anmerkungen: ${notes}\n`;
